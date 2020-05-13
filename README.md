@@ -1,6 +1,4 @@
-# p123api Package
-
-Portfolio123 API python wrapper.
+# Portfolio123 API Wrapper
 
 Sample code:
 ```python
