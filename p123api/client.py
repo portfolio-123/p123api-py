@@ -11,16 +11,17 @@ UNIVERSE_PATH = '/universe'
 RANK_PATH = '/rank'
 DATA_PATH = '/data'
 RANK_RANKS_PATH = '/rank/ranks'
+DATA_UNIVERSE_PATH = '/data/universe'
 
 
 class ClientException(Exception):
-    def __init__(self, message, *, status_code=None, exception=None):
+    def __init__(self, message, *, resp=None, exception=None):
         super().__init__(message)
-        self._status_code = status_code
+        self._resp = resp
         self._exception = exception
 
-    def get_status_code(self):
-        return self._status_code
+    def get_resp(self) -> requests.Response:
+        return self._resp
 
     def get_cause(self) -> Exception:
         return self._exception
@@ -35,6 +36,7 @@ class Client(object):
         self._endpoint = ENDPOINT
         self._verify_requests = True
         self._max_req_retries = 5
+        self._timeout = 300
 
         if not isinstance(api_id, str) or not api_id:
             raise ClientException('api_id needs to be a non empty str')
@@ -59,6 +61,11 @@ class Client(object):
             raise ClientException('retries needs to be an int between 1 and 10')
         self._max_req_retries = retries
 
+    def set_timeout(self, timeout):
+        if not isinstance(timeout, int) or timeout < 1:
+            raise ClientException('timeout needs to be an int greater than 0')
+        self._timeout = timeout
+
     def auth(self):
         """
         Authenticates and sets the Bearer authorization header on success. This method doesn't need to be called
@@ -71,24 +78,26 @@ class Client(object):
             self._max_req_retries,
             url=self._endpoint + AUTH_PATH,
             auth=(self._api_id, self._api_key),
-            verify=self._verify_requests
+            verify=self._verify_requests,
+            timeout=30
         )
-        if resp.status_code == 200:
-            self._session.headers.update({'Authorization': f'Bearer {resp.text}'})
-        else:
-            if resp.status_code == 406:
-                message = 'user account inactive'
-            elif resp.status_code == 402:
-                message = 'paying subscription required'
-            elif resp.status_code == 401:
-                message = 'invalid id/key combination or key inactive'
-            elif resp.status_code == 400:
-                message = 'invalid key'
+        if resp:
+            if resp.status_code == 200:
+                self._session.headers.update({'Authorization': f'Bearer {resp.text}'})
             else:
-                message = resp.text
-            if message:
-                message = ': ' + message
-            raise ClientException(f'API authentication failed{message}', status_code=resp.status_code)
+                if resp.status_code == 406:
+                    message = 'user account inactive'
+                elif resp.status_code == 402:
+                    message = 'paying subscription required'
+                elif resp.status_code == 401:
+                    message = 'invalid id/key combination or key inactive'
+                elif resp.status_code == 400:
+                    message = 'invalid key'
+                else:
+                    message = resp.text
+                if message:
+                    message = ': ' + message
+                raise ClientException(f'API authentication failed{message}', resp=resp)
 
     def _req_with_auth_fallback(self, *, name: str, url: str, params, stop: bool = False):
         """
@@ -106,7 +115,8 @@ class Client(object):
                 self._max_req_retries,
                 url=url,
                 json=params,
-                verify=self._verify_requests, timeout=300
+                verify=self._verify_requests,
+                timeout=self._timeout
             )
         if resp is None or resp.status_code == 403:
             if not stop:
@@ -120,7 +130,7 @@ class Client(object):
                 message = 'request quota exhausted'
             if message:
                 message = ': ' + message
-            raise ClientException(f'API request failed{message}')
+            raise ClientException(f'API request failed{message}', resp=resp)
 
     def screen_rolling_backtest(self, params: dict):
         """
@@ -194,6 +204,18 @@ class Client(object):
             params=params
         ).json()
 
+    def data_universe(self, params: dict):
+        """
+        Data
+        :param params:
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name='data',
+            url=self._endpoint + DATA_UNIVERSE_PATH,
+            params=params
+        ).json()
+
     def rank_ranks(self, params: dict):
         """
         Data
@@ -220,9 +242,10 @@ def req_with_retry(req, max_tries=None, **kwargs):
             time.sleep(2 * tries)
         try:
             resp = req(**kwargs)
-            if resp.status_code != 503:
+            if resp.status_code < 500:
                 break
         except Exception as e:
-            raise ClientException('Cannot connect to API', exception=e)
+            if tries + 1 == max_tries:
+                raise ClientException('Cannot connect to API', exception=e)
         tries += 1
     return resp
