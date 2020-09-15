@@ -11,6 +11,7 @@ UNIVERSE_PATH = '/universe'
 RANK_PATH = '/rank'
 DATA_PATH = '/data'
 RANK_RANKS_PATH = '/rank/ranks'
+RANK_PERF_PATH = '/rank/performance'
 DATA_UNIVERSE_PATH = '/data/universe'
 
 
@@ -206,7 +207,7 @@ class Client(object):
 
     def data_universe(self, params: dict):
         """
-        Data
+        Universe data
         :param params:
         :return:
         """
@@ -218,13 +219,25 @@ class Client(object):
 
     def rank_ranks(self, params: dict):
         """
-        Data
+        Ranking system ranks
         :param params:
         :return:
         """
         return self._req_with_auth_fallback(
             name='data',
             url=self._endpoint + RANK_RANKS_PATH,
+            params=params
+        ).json()
+
+    def rank_perf(self, params: dict):
+        """
+        Ranking system performance
+        :param params:
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name='data',
+            url=self._endpoint + RANK_PERF_PATH,
             params=params
         ).json()
 
