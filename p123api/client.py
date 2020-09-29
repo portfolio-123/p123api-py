@@ -82,23 +82,22 @@ class Client(object):
             verify=self._verify_requests,
             timeout=30
         )
-        if resp:
-            if resp.status_code == 200:
-                self._session.headers.update({'Authorization': f'Bearer {resp.text}'})
+        if resp.status_code == 200:
+            self._session.headers.update({'Authorization': f'Bearer {resp.text}'})
+        else:
+            if resp.status_code == 406:
+                message = 'user account inactive'
+            elif resp.status_code == 402:
+                message = 'paying subscription required'
+            elif resp.status_code == 401:
+                message = 'invalid id/key combination or key inactive'
+            elif resp.status_code == 400:
+                message = 'invalid key'
             else:
-                if resp.status_code == 406:
-                    message = 'user account inactive'
-                elif resp.status_code == 402:
-                    message = 'paying subscription required'
-                elif resp.status_code == 401:
-                    message = 'invalid id/key combination or key inactive'
-                elif resp.status_code == 400:
-                    message = 'invalid key'
-                else:
-                    message = resp.text
-                if message:
-                    message = ': ' + message
-                raise ClientException(f'API authentication failed{message}', resp=resp)
+                message = resp.text
+            if message:
+                message = ': ' + message
+            raise ClientException(f'API authentication failed{message}', resp=resp)
 
     def _req_with_auth_fallback(self, *, name: str, url: str, params, stop: bool = False):
         """
