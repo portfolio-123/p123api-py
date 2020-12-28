@@ -1,8 +1,9 @@
 import requests
 import time
+import pandas
 
 
-ENDPOINT = 'https://api.portfolio123.com:8443'
+ENDPOINT = 'https://api.portfolio123.com'
 AUTH_PATH = '/auth'
 SCREEN_ROLLING_BACKTEST_PATH = '/screen/rolling-backtest'
 SCREEN_BACKTEST_PATH = '/screen/backtest'
@@ -192,41 +193,108 @@ class Client(object):
             params=params
         )
 
-    def data(self, params: dict):
+    def data(self, params: dict, to_pandas: bool = False):
         """
         Data
         :param params:
+        :param to_pandas:
         :return:
         """
-        return self._req_with_auth_fallback(
+        ret = self._req_with_auth_fallback(
             name='data',
             url=self._endpoint + DATA_PATH,
             params=params
         ).json()
 
-    def data_universe(self, params: dict):
+        if to_pandas:
+            raw_obj = dict(ret)
+            with_cusips = params.get('cusips') is not None
+            with_name = params.get('includeNames')
+            data = []
+            for date_idx, date in enumerate(ret['dates']):
+                for item_uid, item_data in ret['items'].items():
+                    row = [date, item_uid, item_data['ticker']]
+                    if with_cusips:
+                        row.append(item_data['cusip'])
+                    if with_name:
+                        row.append(item_data['name'])
+                    for formula_idx, formula in enumerate(params['formulas']):
+                        row.append(item_data['series'][formula_idx][date_idx])
+                    data.append(row)
+            columns = ['date', 'p123Uid', 'ticker']
+            if with_cusips:
+                columns.append('cusip')
+            if with_name:
+                columns.append('name')
+            for formula_idx, formula in enumerate(params['formulas']):
+                columns.append(f'formula{formula_idx + 1}')
+            ret = pandas.DataFrame(data=data, columns=columns)
+            ret.attrs['raw_obj'] = raw_obj
+
+        return ret
+
+    def data_universe(self, params: dict, to_pandas: bool = False):
         """
         Universe data
         :param params:
+        :param to_pandas:
         :return:
         """
-        return self._req_with_auth_fallback(
+        ret = self._req_with_auth_fallback(
             name='data',
             url=self._endpoint + DATA_UNIVERSE_PATH,
             params=params
         ).json()
 
-    def rank_ranks(self, params: dict):
+        if to_pandas:
+            raw_obj = dict(ret)
+            for formula_idx, formula in enumerate(params['formulas']):
+                ret[f'formula{formula_idx + 1}'] = ret['data'][formula_idx]
+            del ret['quota'], ret['quotaRemaining'], ret['data']
+            if ret.get('dt'):
+                del ret['dt']
+            ret = pandas.DataFrame(data=ret)
+            ret.attrs['raw_obj'] = raw_obj
+
+        return ret
+
+    def rank_ranks(self, params: dict, to_pandas: bool = False):
         """
         Ranking system ranks
         :param params:
+        :param to_pandas:
         :return:
         """
-        return self._req_with_auth_fallback(
+        ret = self._req_with_auth_fallback(
             name='data',
             url=self._endpoint + RANK_RANKS_PATH,
             params=params
         ).json()
+
+        if to_pandas:
+            raw_obj = dict(ret)
+            del ret['quota'], ret['quotaRemaining'], ret['dt']
+            nodes = ret.get('nodes')
+            if nodes is not None:
+                for node_idx, node_name in enumerate(nodes['names']):
+                    if node_idx > 0:
+                        node_name = node_name + f" ({nodes['weights'][node_idx]}%)"
+                        ret[node_name] = []
+                        for idx, uid in enumerate(ret['p123Uids']):
+                            ret[node_name].append(nodes['ranks'][idx][node_idx])
+                del ret['nodes']
+            additional_data = ret.get('additionalData')
+            if additional_data is not None:
+                for data_idx, data_name in enumerate(params['additionalData']):
+                    data_name = f'formula{data_idx + 1}'
+                    ret[data_name] = []
+                    for idx, uid in enumerate(ret['p123Uids']):
+                        ret[data_name].append(additional_data[idx][data_idx])
+                del ret['additionalData']
+            ret = pandas.DataFrame(data=ret)
+            ret.attrs['raw_obj'] = raw_obj
+
+        return ret
 
     def rank_perf(self, params: dict):
         """
