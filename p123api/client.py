@@ -1,6 +1,7 @@
 import requests
 import time
 import pandas
+from string import Template
 
 
 ENDPOINT = 'https://api.portfolio123.com'
@@ -14,6 +15,13 @@ DATA_PATH = '/data'
 RANK_RANKS_PATH = '/rank/ranks'
 RANK_PERF_PATH = '/rank/performance'
 DATA_UNIVERSE_PATH = '/data/universe'
+STRATEGY_UNIVERSE_PATH = Template('/strategy/$id')
+STOCK_FACTOR_UPLOAD_PATH = Template('/stockFactor/upload/$id')
+STOCK_FACTOR_CREATE_UPDATE_PATH = '/stockFactor'
+STOCK_FACTOR_DELETE_PATH = Template('/stockFactor/$id')
+DATA_SERIES_UPLOAD_PATH = Template('/dataSeries/upload/$id')
+DATA_SERIES_CREATE_UPDATE_PATH = '/dataSeries'
+DATA_SERIES_DELETE_PATH = Template('/dataSeries/$id')
 
 
 class ClientException(Exception):
@@ -39,6 +47,7 @@ class Client(object):
         self._verify_requests = True
         self._max_req_retries = 5
         self._timeout = 300
+        self._token = None
 
         if not isinstance(api_id, str) or not api_id:
             raise ClientException('api_id needs to be a non empty str')
@@ -68,6 +77,9 @@ class Client(object):
             raise ClientException('timeout needs to be an int greater than 0')
         self._timeout = timeout
 
+    def get_token(self):
+        return self._token
+
     def auth(self):
         """
         Authenticates and sets the Bearer authorization header on success. This method doesn't need to be called
@@ -84,6 +96,7 @@ class Client(object):
             timeout=30
         )
         if resp.status_code == 200:
+            self._token = resp.text
             self._session.headers.update({'Authorization': f'Bearer {resp.text}'})
         else:
             if resp.status_code == 406:
@@ -100,29 +113,48 @@ class Client(object):
                 message = ': ' + message
             raise ClientException(f'API authentication failed{message}', resp=resp)
 
-    def _req_with_auth_fallback(self, *, name: str, url: str, params, stop: bool = False):
+    def _req_with_auth_fallback(
+            self, *, name: str, method: str = 'POST', url: str, params=None, data=None,
+            headers=None, stop: bool = False):
         """
         Request with authentication fallback, used by all requests (except authentication)
         :param name: request action
+        :param method: request method
         :param url: request url
         :param params: request params
+        :param data: request data
+        :param headers: request headers
         :param stop: flag to stop infinite authentication recursion
         :return: request response object
         """
         resp = None
         if self._session.headers.get('Authorization') is not None:
-            resp = req_with_retry(
-                self._session.post,
-                self._max_req_retries,
-                url=url,
-                json=params,
-                verify=self._verify_requests,
-                timeout=self._timeout
-            )
+            if method == 'POST':
+                resp = req_with_retry(
+                    self._session.post,
+                    self._max_req_retries,
+                    url=url,
+                    json=params,
+                    verify=self._verify_requests,
+                    timeout=self._timeout,
+                    data=data,
+                    headers=headers
+                )
+            else:
+                req_type = self._session.delete if method == 'DELETE' else self._session.get
+                resp = req_with_retry(
+                    req_type,
+                    self._max_req_retries,
+                    url=url,
+                    verify=self._verify_requests,
+                    timeout=self._timeout,
+                    headers=headers
+                )
         if resp is None or resp.status_code == 403:
             if not stop:
                 self.auth()
-                return self._req_with_auth_fallback(name=name, url=url, params=params, stop=True)
+                return self._req_with_auth_fallback(
+                    name=name, method=method, url=url, params=params, data=data, stop=True)
         elif resp.status_code == 200:
             return resp
         else:
@@ -171,27 +203,27 @@ class Client(object):
 
     def universe_update(self, params: dict):
         """
-        API universe update
+        Universe update
         :param params:
         :return:
         """
-        self._req_with_auth_fallback(
+        return self._req_with_auth_fallback(
             name='universe update',
             url=self._endpoint + UNIVERSE_PATH,
             params=params
-        )
+        ).json()
 
     def rank_update(self, params: dict):
         """
-        API ranking system update
+        Ranking system update
         :param params:
         :return:
         """
-        self._req_with_auth_fallback(
+        return self._req_with_auth_fallback(
             name='ranking system update',
             url=self._endpoint + RANK_PATH,
             params=params
-        )
+        ).json()
 
     def data(self, params: dict, to_pandas: bool = False):
         """
@@ -241,7 +273,7 @@ class Client(object):
         :return:
         """
         ret = self._req_with_auth_fallback(
-            name='data',
+            name='data universe',
             url=self._endpoint + DATA_UNIVERSE_PATH,
             params=params
         ).json()
@@ -250,7 +282,7 @@ class Client(object):
             raw_obj = dict(ret)
             for formula_idx, formula in enumerate(params['formulas']):
                 ret[f'formula{formula_idx + 1}'] = ret['data'][formula_idx]
-            del ret['quota'], ret['quotaRemaining'], ret['data']
+            del ret['cost'], ret['quotaRemaining'], ret['data']
             if ret.get('dt'):
                 del ret['dt']
             ret = pandas.DataFrame(data=ret)
@@ -266,14 +298,14 @@ class Client(object):
         :return:
         """
         ret = self._req_with_auth_fallback(
-            name='data',
+            name='ranking system ranks',
             url=self._endpoint + RANK_RANKS_PATH,
             params=params
         ).json()
 
         if to_pandas:
             raw_obj = dict(ret)
-            del ret['quota'], ret['quotaRemaining'], ret['dt']
+            del ret['cost'], ret['quotaRemaining'], ret['dt']
             nodes = ret.get('nodes')
             if nodes is not None:
                 for node_idx, node_name in enumerate(nodes['names']):
@@ -303,9 +335,145 @@ class Client(object):
         :return:
         """
         return self._req_with_auth_fallback(
-            name='data',
+            name='ranking system performance',
             url=self._endpoint + RANK_PERF_PATH,
             params=params
+        ).json()
+
+    def strategy(self, strategy_id: int):
+        """
+        Strategy details
+        :param strategy_id:
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name='strategy details',
+            method='GET',
+            url=self._endpoint + STRATEGY_UNIVERSE_PATH.substitute(id=strategy_id)
+        ).json()
+
+    def stock_factor_upload(
+            self, factor_id: int, file: str, column_separator: str = None,
+            existing_data: str = None, date_format: str = None,
+            decimal_separator: chr(1) = None, ignore_errors: bool = None, ignore_duplicates: bool = None
+    ):
+        """
+        Stock factor data upload
+        :param factor_id:
+        :param file:
+        :param column_separator: comma, semicolon or tab
+        :param existing_data: overwrite, skip or delete
+        :param date_format: dd for day, mm for month and yyyy for year, any separator allowed (defaults to yyyy-mm-dd)
+        :param decimal_separator: . or ,
+        :param ignore_errors:
+        :param ignore_duplicates:
+        :return:
+        """
+        with open(file, 'rb') as data:
+            get_params = []
+            if column_separator is not None:
+                get_params.append(f'columnSeparator={column_separator}')
+            if existing_data is not None:
+                get_params.append(f'existingData={existing_data}')
+            if date_format is not None:
+                get_params.append(f'dateFormat={date_format}')
+            if decimal_separator is not None:
+                get_params.append(f'decimalSeparator={decimal_separator}')
+            if ignore_errors is not None:
+                get_params.append('onError={}'.format('continue' if ignore_errors else 'stop'))
+            if ignore_duplicates is not None:
+                get_params.append('onDuplicates={}'.format('continue' if ignore_duplicates else 'stop'))
+            get_params = '?' + '&'.join(get_params) if len(get_params) else ''
+            return self._req_with_auth_fallback(
+                name='stock factor data upload',
+                url=self._endpoint + STOCK_FACTOR_UPLOAD_PATH.substitute(id=factor_id) + get_params,
+                data=data
+            ).json()
+
+    def stock_factor_create_update(self, params: dict):
+        """
+        Stock factor create/update
+        :param params:
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name='stock factor create/update',
+            url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH,
+            params=params
+        ).json()
+
+    def stock_factor_delete(self, factor_id: int):
+        """
+        Stock factor delete
+        :param factor_id: id of the data stock factor to delete
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name='stock factor delete',
+            method='DELETE',
+            url=self._endpoint + STOCK_FACTOR_DELETE_PATH.substitute(id=factor_id)
+        ).json()
+
+    def data_series_upload(
+            self, series_id: int, file: str, existing_data: str = None, date_format: str = None,
+            decimal_separator: chr(1) = None, ignore_errors: bool = None, ignore_duplicates: bool = None,
+            contains_header_row: bool = None
+    ):
+        """
+        Data series upload
+        :param series_id:
+        :param file:
+        :param existing_data: overwrite, skip or delete
+        :param date_format: dd for day, mm for month and yyyy for year, any separator allowed (defaults to yyyy-mm-dd)
+        :param decimal_separator: . or ,
+        :param ignore_errors:
+        :param ignore_duplicates:
+        :param contains_header_row:
+        :return:
+        """
+        with open(file, 'rb') as data:
+            get_params = []
+            if existing_data is not None:
+                get_params.append(f'existingData={existing_data}')
+            if date_format is not None:
+                get_params.append(f'dateFormat={date_format}')
+            if decimal_separator is not None:
+                get_params.append(f'decimalSeparator={decimal_separator}')
+            if ignore_errors is not None:
+                get_params.append('onError={}'.format('continue' if ignore_errors else 'stop'))
+            if ignore_duplicates is not None:
+                get_params.append('onDuplicates={}'.format('continue' if ignore_duplicates else 'stop'))
+            if contains_header_row is not None:
+                get_params.append(f'headerRow={contains_header_row}')
+            get_params = '?' + '&'.join(get_params) if len(get_params) else ''
+            return self._req_with_auth_fallback(
+                name='data series upload',
+                url=self._endpoint + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id) + get_params,
+                data=data
+            ).json()
+
+    def data_series_create_update(self, params: dict):
+        """
+        Data series create/update
+        :param params:
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name='data series create/update',
+            url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH,
+            params=params
+        ).json()
+
+    def data_series_delete(self, series_id: int):
+        """
+        Data series delete
+        :param series_id: id of the data series to delete
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name='data series delete',
+            method='DELETE',
+            url=self._endpoint + DATA_SERIES_DELETE_PATH.substitute(id=series_id)
         ).json()
 
     def get_api_id(self):
