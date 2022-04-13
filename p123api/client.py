@@ -165,41 +165,98 @@ class Client(object):
                 message = ': ' + message
             raise ClientException(f'API request failed{message}', resp=resp)
 
-    def screen_rolling_backtest(self, params: dict):
+    def screen_rolling_backtest(self, params: dict, to_pandas: bool = False):
         """
         Screen rolling backtest
         :param params:
+        :param to_pandas:
         :return:
         """
-        return self._req_with_auth_fallback(
+        ret = self._req_with_auth_fallback(
             name='screen rolling backtest',
             url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH,
             params=params
         ).json()
 
-    def screen_backtest(self, params: dict):
+        if to_pandas:
+            rows = ret['rows']
+            ret['average'][0] = 'Average'
+            rows.append(ret['average'])
+            ret['upMarkets'][0] = 'Up Markets'
+            rows.append(ret['upMarkets'])
+            ret['downMarkets'][0] = 'Down Markets'
+            rows.append(ret['downMarkets'])
+            ret = pandas.DataFrame(data=rows, columns=ret['columns'])
+
+        return ret
+
+    def screen_backtest(self, params: dict, to_pandas: bool = False):
         """
         Screen backtest
         :param params:
+        :param to_pandas:
         :return:
         """
-        return self._req_with_auth_fallback(
+        ret = self._req_with_auth_fallback(
             name='screen backtest',
             url=self._endpoint + SCREEN_BACKTEST_PATH,
             params=params
         ).json()
 
-    def screen_run(self, params: dict):
+        if to_pandas:
+            columns = ['', 'Total Return', 'Annualized Return', 'Max Drawdown', 'Sharpe', 'Sortino', 'StdDev', 'CorrelBench',
+                       'R-Squared', 'Beta', 'Alpha']
+            stats = ret['stats']
+            port_stats = stats['port']
+            bench_stats = stats['bench']
+            rows = [
+                ['Screen', port_stats['total_return'], port_stats['annualized_return'], port_stats['max_drawdown'],
+                 port_stats['sharpe_ratio'], port_stats['sortino_ratio'], port_stats['standard_dev'],
+                 stats['correlation'], stats['r_squared'], stats['beta'], stats['alpha']],
+                ['Benchmark', bench_stats['total_return'], bench_stats['annualized_return'],
+                 bench_stats['max_drawdown'], bench_stats['sharpe_ratio'], bench_stats['sortino_ratio'],
+                 bench_stats['standard_dev'], '', '', '', '']
+            ]
+            panda_stats = pandas.DataFrame(data=rows, columns=columns)
+
+            rows = ret['results']['rows']
+            ret['results']['average'][0] = 'Average'
+            rows.append(ret['results']['average'])
+            ret['results']['upMarkets'][0] = 'Up Markets'
+            rows.append(ret['results']['upMarkets'])
+            ret['results']['downMarkets'][0] = 'Down Markets'
+            rows.append(ret['results']['downMarkets'])
+            panda_results = pandas.DataFrame(data=rows, columns=ret['results']['columns'])
+
+            columns = ['Date', 'Screen Return', 'Bench Return', 'Turnover %', 'Position Count']
+            chart = ret['chart']
+            rows = []
+            for (idx, date) in enumerate(chart['dates']):
+                rows.append([date, chart['screenReturns'][idx], chart['benchReturns'][idx], chart['turnoverPct'][idx],
+                             chart['positionCnt'][idx]])
+            panda_chart = pandas.DataFrame(data=rows, columns=columns)
+
+            ret = {"stats": panda_stats, "results": panda_results, "chart": panda_chart}
+
+        return ret
+
+    def screen_run(self, params: dict, to_pandas: bool = False):
         """
         Screen run
         :param params:
+        :param to_pandas:
         :return:
         """
-        return self._req_with_auth_fallback(
+        ret = self._req_with_auth_fallback(
             name='screen backtest',
             url=self._endpoint + SCREEN_RUN_PATH,
             params=params
         ).json()
+
+        if to_pandas:
+            ret = pandas.DataFrame(data=ret['rows'], columns=ret['columns'])
+
+        return ret
 
     def universe_update(self, params: dict):
         """
