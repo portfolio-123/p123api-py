@@ -211,11 +211,11 @@ class Client(object):
             bench_stats = stats['bench']
             rows = [
                 ['Screen', port_stats['total_return'], port_stats['annualized_return'], port_stats['max_drawdown'],
-                 port_stats['sharpe_ratio'], port_stats['sortino_ratio'], port_stats['standard_dev'],
-                 stats['correlation'], stats['r_squared'], stats['beta'], stats['alpha']],
+                 port_stats.get('sharpe_ratio'), port_stats.get('sortino_ratio'), port_stats.get('standard_dev'),
+                 stats.get('correlation'), stats.get('r_squared'), stats.get('beta'), stats.get('alpha')],
                 ['Benchmark', bench_stats['total_return'], bench_stats['annualized_return'],
-                 bench_stats['max_drawdown'], bench_stats['sharpe_ratio'], bench_stats['sortino_ratio'],
-                 bench_stats['standard_dev'], '', '', '', '']
+                 bench_stats['max_drawdown'], bench_stats.get('sharpe_ratio'), bench_stats.get('sortino_ratio'),
+                 bench_stats.get('standard_dev'), '', '', '', '']
             ]
             panda_stats = pandas.DataFrame(data=rows, columns=columns)
 
@@ -549,7 +549,7 @@ def req_with_retry(req, max_tries=None, **kwargs):
             resp = req(**kwargs)
             if resp.status_code < 500:
                 break
-        except Exception as e:
+        except requests.ConnectionError as e:
             if tries + 1 == max_tries:
                 raise ClientException('Cannot connect to API', exception=e)
         tries += 1
