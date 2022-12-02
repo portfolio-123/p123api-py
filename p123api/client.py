@@ -361,6 +361,7 @@ class Client(object):
         ).json()
 
         if to_pandas:
+            names = dict()
             raw_obj = dict(ret)
             del ret['cost'], ret['quotaRemaining'], ret['dt']
             nodes = ret.get('nodes')
@@ -368,6 +369,12 @@ class Client(object):
                 for node_idx, node_name in enumerate(nodes['names']):
                     if node_idx > 0:
                         node_name = node_name + f" ({nodes['weights'][node_idx]}%)"
+                        if names.get(node_name) is not None:
+                            idx = names[node_name] + 1
+                            names[node_name] = idx
+                            node_name = node_name + f' #{idx}'
+                        else:
+                            names[node_name] = 0
                         ret[node_name] = []
                         for idx, uid in enumerate(ret['p123Uids']):
                             ret[node_name].append(nodes['ranks'][idx][node_idx])
