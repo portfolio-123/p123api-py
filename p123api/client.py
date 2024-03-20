@@ -14,6 +14,7 @@ RANK_PATH = "/rank"
 DATA_PATH = "/data"
 RANK_RANKS_PATH = "/rank/ranks"
 RANK_PERF_PATH = "/rank/performance"
+RANK_TOUCH_PATH = Template("/rank/$id/touch")
 DATA_UNIVERSE_PATH = "/data/universe"
 STRATEGY_UNIVERSE_PATH = Template("/strategy/$id")
 STOCK_FACTOR_UPLOAD_PATH = Template("/stockFactor/upload/$id")
@@ -471,6 +472,17 @@ class Client(object):
             url=self._endpoint + RANK_PERF_PATH,
             params=params,
         ).json()
+
+    def rank_touch(self, rank_id: int):
+        """
+        Rank touch
+        :param rank_id:
+        """
+        self._req_with_auth_fallback(
+            name="rank touch",
+            method="POST",
+            url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id),
+        )
 
     def strategy(self, strategy_id: int):
         """

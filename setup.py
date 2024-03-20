@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="p123api",
-    version="1.3.5",
+    version="1.4.0",
     author="Portfolio123",
     author_email="info@portfolio123.com",
     description="Portfolio123 API wrapper",
@@ -18,5 +18,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires=">=3.6",
 )
