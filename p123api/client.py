@@ -1,3 +1,4 @@
+from collections import defaultdict
 import requests
 import time
 import pandas
@@ -182,7 +183,7 @@ class Client(object):
                 message = ": " + message
             raise ClientException(f"API request failed{message}", resp=resp)
 
-    def screen_rolling_backtest(self, params: dict, to_pandas: bool = False):
+    def screen_rolling_backtest(self, params: dict, to_pandas=False):
         """
         Screen rolling backtest
         :param params:
@@ -207,7 +208,7 @@ class Client(object):
 
         return ret
 
-    def screen_backtest(self, params: dict, to_pandas: bool = False):
+    def screen_backtest(self, params: dict, to_pandas=False):
         """
         Screen backtest
         :param params:
@@ -303,7 +304,7 @@ class Client(object):
 
         return ret
 
-    def screen_run(self, params: dict, to_pandas: bool = False):
+    def screen_run(self, params: dict, to_pandas=False):
         """
         Screen run
         :param params:
@@ -339,7 +340,7 @@ class Client(object):
             name="ranking system update", url=self._endpoint + RANK_PATH, params=params
         ).json()
 
-    def data(self, params: dict, to_pandas: bool = False):
+    def data(self, params: dict, to_pandas=False):
         """
         Data
         :param params:
@@ -377,7 +378,7 @@ class Client(object):
 
         return ret
 
-    def data_universe(self, params: dict, to_pandas: bool = False):
+    def data_universe(self, params: dict, to_pandas=False):
         """
         Universe data
         :param params:
@@ -390,9 +391,16 @@ class Client(object):
 
         if to_pandas:
             raw_obj = ret
+            names = params.get("names")
+            f_indices = range(len(params["formulas"]))
             if params.get("asOfDt"):
-                for formula_idx, _ in enumerate(params["formulas"]):
-                    ret[f"formula{formula_idx + 1}"] = ret["data"][formula_idx]
+                for formula_idx in f_indices:
+                    name = (
+                        names[formula_idx]
+                        if names is not None
+                        else f"formula{formula_idx + 1}"
+                    )
+                    ret[name] = ret["data"][formula_idx]
                 del ret["dt"], ret["cost"], ret["quotaRemaining"], ret["data"]
                 ret = pandas.DataFrame(ret)
             else:
@@ -401,22 +409,36 @@ class Client(object):
                 if params.get("includeNames"):
                     data["names"] = []
                     includeNames = True
-                for formula_idx, _ in enumerate(params["formulas"]):
-                    data[f"formula{formula_idx + 1}"] = []
+                includeFigi = False
+                if params.get("figi"):
+                    data["figi"] = []
+                    includeFigi = True
+                formulas = defaultdict(list)
                 for dtObj in ret["dates"]:
-                    data["dates"] += len(dtObj["p123Uids"]) * [dtObj["dt"]]
-                    data["p123Uids"] += dtObj["p123Uids"]
-                    data["tickers"] += dtObj["tickers"]
+                    data["dates"].extend(
+                        dtObj["dt"] for _ in range(len(dtObj["p123Uids"]))
+                    )
+                    data["p123Uids"].extend(dtObj["p123Uids"])
+                    data["tickers"].extend(dtObj["tickers"])
                     if includeNames:
-                        data["names"] += dtObj["names"]
-                    for formula_idx, _ in enumerate(params["formulas"]):
-                        data[f"formula{formula_idx + 1}"] += dtObj["data"][formula_idx]
+                        data["names"].extend(dtObj["names"])
+                    if includeFigi:
+                        data["figi"].extend(dtObj["figi"])
+                    for formula_idx in f_indices:
+                        formulas[formula_idx].extend(dtObj["data"][formula_idx])
+                for formula_idx in f_indices:
+                    name = (
+                        names[formula_idx]
+                        if names is not None
+                        else f"formula{formula_idx + 1}"
+                    )
+                    data[name] = formulas[formula_idx]
                 ret = pandas.DataFrame(data)
             ret.attrs["raw_obj"] = raw_obj
 
         return ret
 
-    def rank_ranks(self, params: dict, to_pandas: bool = False):
+    def rank_ranks(self, params: dict, to_pandas=False):
         """
         Ranking system ranks
         :param params:
