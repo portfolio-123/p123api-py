@@ -24,6 +24,7 @@ STOCK_FACTOR_DELETE_PATH = Template("/stockFactor/$id")
 DATA_SERIES_UPLOAD_PATH = Template("/dataSeries/upload/$id")
 DATA_SERIES_CREATE_UPDATE_PATH = "/dataSeries"
 DATA_SERIES_DELETE_PATH = Template("/dataSeries/$id")
+AIFACTOR_PREDICT_PATH = Template("/aiFactor/predict/$id")
 
 
 class ClientException(Exception):
@@ -44,9 +45,11 @@ class Client(object):
     class for interfacing with P123 API
     """
 
-    def __init__(self, *, api_id, api_key):
-        self._endpoint = ENDPOINT
-        self._verify_requests = True
+    def __init__(
+        self, *, api_id, api_key, auth_extra={}, endpoint=ENDPOINT, verify_requests=True
+    ):
+        self._endpoint = endpoint
+        self._verify_requests = verify_requests
         self._max_req_retries = 5
         self._timeout = 300
         self._token = None
@@ -56,18 +59,8 @@ class Client(object):
         if not isinstance(api_key, str) or not api_key:
             raise ClientException("api_key needs to be a non empty str")
 
-        self._api_id = api_id
-        self._api_key = api_key
+        self._auth_params = {"apiId": api_id, "apiKey": api_key, **auth_extra}
         self._session = requests.Session()
-
-    def set_endpoint(self, endpoint):
-        self._endpoint = endpoint
-
-    def enable_verify_requests(self):
-        self._verify_requests = True
-
-    def disable_verify_requests(self):
-        self._verify_requests = False
 
     def set_max_request_retries(self, retries):
         if not isinstance(retries, int) or retries < 1 or retries > 10:
@@ -93,7 +86,7 @@ class Client(object):
             self._session.post,
             self._max_req_retries,
             url=self._endpoint + AUTH_PATH,
-            auth=(self._api_id, self._api_key),
+            json=self._auth_params,
             verify=self._verify_requests,
             timeout=30,
         )
@@ -671,7 +664,37 @@ class Client(object):
         ).json()
 
     def get_api_id(self):
-        return self._api_id
+        return self._auth_params["apiId"]
+
+    def aifactor_predict(self, predictor_id: int, params={}, to_pandas=False):
+        """
+        AI Factor predict
+        :param predictor_id:
+        :param params:
+        :return:
+        """
+        ret = self._req_with_auth_fallback(
+            name="AI Factor predict",
+            url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id),
+            params=params,
+        ).json()
+
+        if to_pandas:
+            data = {"p123Uid": ret["p123Uids"], "ticker": ret["tickers"]}
+            if "names" in ret:
+                data["name"] = ret["names"]
+            if "figi" in ret:
+                data["figi"] = ret["figi"]
+            data["prediction"] = ret["predictions"]
+            df = pandas.DataFrame(data)
+            if "features" in ret:
+                df = pandas.concat(
+                    (df, pandas.DataFrame(ret["data"], columns=ret["features"])),
+                    axis="columns",
+                )
+            ret = df
+
+        return ret
 
 
 def req_with_retry(req, max_tries=None, **kwargs):
