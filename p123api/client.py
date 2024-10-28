@@ -82,6 +82,7 @@ class Client(object):
         if session expires.
         :return: bool
         """
+        self._session.headers.clear()
         resp = req_with_retry(
             self._session.post,
             self._max_req_retries,
@@ -689,7 +690,20 @@ class Client(object):
             df = pandas.DataFrame(data)
             if "features" in ret:
                 df = pandas.concat(
-                    (df, pandas.DataFrame(ret["data"], columns=ret["features"])),
+                    [
+                        df,
+                        pandas.DataFrame(ret["data"], columns=ret["features"]),
+                        *(
+                            (
+                                pandas.DataFrame(
+                                    ret["rawData"],
+                                    columns=["raw " + x for x in ret["features"]],
+                                ),
+                            )
+                            if "rawData" in ret
+                            else ()
+                        ),
+                    ],
                     axis="columns",
                 )
             ret = df
