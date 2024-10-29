@@ -40,7 +40,7 @@ class ClientException(Exception):
         return self._exception
 
 
-class Client(object):
+class Client:
     """
     class for interfacing with P123 API
     """
@@ -61,6 +61,15 @@ class Client(object):
 
         self._auth_params = {"apiId": api_id, "apiKey": api_key, **auth_extra}
         self._session = requests.Session()
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
+        self._session.close()
 
     def set_max_request_retries(self, retries):
         if not isinstance(retries, int) or retries < 1 or retries > 10:
