@@ -20,7 +20,8 @@ DATA_UNIVERSE_PATH = "/data/universe"
 STRATEGY_UNIVERSE_PATH = Template("/strategy/$id")
 STOCK_FACTOR_UPLOAD_PATH = Template("/stockFactor/upload/$id")
 STOCK_FACTOR_CREATE_UPDATE_PATH = "/stockFactor"
-STOCK_FACTOR_DELETE_PATH = Template("/stockFactor/$id")
+STOCK_FACTOR_DOWNLOAD_PATH = Template("/stockFactor/$id")
+STOCK_FACTOR_DELETE_PATH = STOCK_FACTOR_DOWNLOAD_PATH
 DATA_SERIES_UPLOAD_PATH = Template("/dataSeries/upload/$id")
 DATA_SERIES_CREATE_UPDATE_PATH = "/dataSeries"
 DATA_SERIES_DELETE_PATH = Template("/dataSeries/$id")
@@ -718,6 +719,18 @@ class Client:
             ret = df
 
         return ret
+
+    def stock_factor_download(self, factor_id: int):
+        """
+        Strategy details
+        :param strategy_id:
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name="stock factor download",
+            method="GET",
+            url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id),
+        ).json()
 
 
 def req_with_retry(req, max_tries=None, **kwargs):
