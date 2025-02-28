@@ -529,7 +529,7 @@ class Client:
         column_separator: str = None,
         existing_data: str = None,
         date_format: str = None,
-        decimal_separator: chr(1) = None,
+        decimal_separator: str = None,
         ignore_errors: bool = None,
         ignore_duplicates: bool = None,
     ):
@@ -604,7 +604,7 @@ class Client:
         file: str,
         existing_data: str = None,
         date_format: str = None,
-        decimal_separator: chr(1) = None,
+        decimal_separator: str = None,
         ignore_errors: bool = None,
         ignore_duplicates: bool = None,
         contains_header_row: bool = None,
