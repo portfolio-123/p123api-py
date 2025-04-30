@@ -3,6 +3,7 @@ import requests
 import time
 import pandas
 from string import Template
+import mimetypes
 
 
 ENDPOINT = "https://api.portfolio123.com"
@@ -17,7 +18,11 @@ RANK_RANKS_PATH = "/rank/ranks"
 RANK_PERF_PATH = "/rank/performance"
 RANK_TOUCH_PATH = Template("/rank/$id/touch")
 DATA_UNIVERSE_PATH = "/data/universe"
-STRATEGY_UNIVERSE_PATH = Template("/strategy/$id")
+STRATEGY_DETAILS_PATH = Template("/strategy/$id")
+STRATEGY_HOLDINGS_PATH = Template("/strategy/$id/holdings")
+STRATEGY_REBALANCE_PATH = Template("/strategy/$id/rebalance")
+STRATEGY_REBALANCE_COMMIT_PATH = Template("/strategy/$id/rebalance/commit")
+STRATEGY_TRANS_PATH = Template("/strategy/$id/transactions")
 STOCK_FACTOR_UPLOAD_PATH = Template("/stockFactor/upload/$id")
 STOCK_FACTOR_CREATE_UPDATE_PATH = "/stockFactor"
 STOCK_FACTOR_DOWNLOAD_PATH = Template("/stockFactor/$id")
@@ -162,6 +167,7 @@ class Client:
                     req_type,
                     self._max_req_retries,
                     url=url,
+                    json=params,
                     verify=self._verify_requests,
                     timeout=self._timeout,
                     headers=headers,
@@ -175,6 +181,7 @@ class Client:
                     url=url,
                     params=params,
                     data=data,
+                    headers=headers,
                     stop=True,
                 )
         elif resp.status_code == 200:
@@ -519,8 +526,137 @@ class Client:
         return self._req_with_auth_fallback(
             name="strategy details",
             method="GET",
-            url=self._endpoint + STRATEGY_UNIVERSE_PATH.substitute(id=strategy_id),
+            url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id),
         ).json()
+    
+    def strategy_transactions(
+        self,
+        strategy_id: int,
+        start: str,
+        end: str,
+        to_pandas=False
+    ):
+        """
+        Strategy transactions
+        :param strategy_id:
+        :param start: start date in YYYY-MM-DD format
+        :param end: end date in YYYY-MM-DD format
+        :return:
+        """
+        ret = self._req_with_auth_fallback(
+            name="strategy transactions",
+            method="GET",
+            url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id) + f"?start={start}&end={end}",
+        ).json()
+        return pandas.DataFrame(ret["trans"]) if to_pandas else ret
+    
+    def strategy_transaction_import(
+        self,
+        strategy_id: int,
+        file_path: str,
+        update_existing: bool = False,
+        make_rebal_dt_curr: bool = False,
+    ):
+        """
+        Strategy transaction import
+        :param strategy_id:
+        :param file:
+        :param update_existing: update existing transactions
+        :param make_rebal_dt_curr: if True, the rebalancing date will be set to the current date
+        :return:
+        """
+        with open(file_path, "rb") as data:
+            get_params = []
+            if update_existing:
+                get_params.append("updateExisting=yes")
+            if make_rebal_dt_curr:
+                get_params.append("makeRebalDtCurr=yes")
+            get_params = "?" + "&".join(get_params) if len(get_params) else ""
+            content_type, _ = mimetypes.guess_type(file_path)
+            headers = {'Content-Type': content_type} if content_type else {}
+            return self._req_with_auth_fallback(
+                name="strategy transaction import",
+                url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id) + get_params,
+                data=data,
+                headers=headers,
+            ).json()
+        
+    def strategy_transaction_delete(
+        self,
+        strategy_id: int,
+        params: list[int],
+    ):
+        """
+        Strategy transaction delete
+        :param strategy_id:
+        :param trans_ids:
+        :return:
+        """
+        return self._req_with_auth_fallback(
+            name="strategy transaction delete",
+            method="DELETE",
+            url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
+            params=params,
+        ).json()
+    
+    def strategy_holdings(
+        self,
+        strategy_id: int,
+        date: str = None,
+        to_pandas=False
+    ):
+        """
+        Strategy holdings
+        :param strategy_id:
+        :param date: date in YYYY-MM-DD format, if None, current date is used
+        :return:
+        """
+        ret = self._req_with_auth_fallback(
+            name="strategy hldings",
+            method="GET",
+            url=self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id) +
+                (f"?date={date}" if date is not None else ""),
+        ).json()
+
+        return pandas.DataFrame(ret) if to_pandas else ret
+    
+    def strategy_rebalance(
+        self,
+        strategy_id: int,
+        params: dict = None
+    ):
+        """
+        Strategy rebalance
+        :param strategy_id:
+        :param params:
+        :return:
+        """
+        ret = self._req_with_auth_fallback(
+            name="strategy rebalance",
+            url=self._endpoint + STRATEGY_REBALANCE_PATH.substitute(id=strategy_id),
+            params=params,
+        ).json()
+
+        return ret
+    
+    def strategy_rebalance_commit(
+        self,
+        strategy_id: int,
+        params: dict = None
+    ):
+        """
+        Strategy rebalance commit
+        :param strategy_id:
+        :param params:
+        :return:
+        """
+        ret = self._req_with_auth_fallback(
+            name="strategy rebalance commit",
+            url=self._endpoint + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id),
+            params=params,
+        ).json()
+
+        return ret
 
     def stock_factor_upload(
         self,
