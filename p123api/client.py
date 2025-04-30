@@ -4,6 +4,7 @@ import time
 import pandas
 from string import Template
 import mimetypes
+from typing import List
 
 
 ENDPOINT = "https://api.portfolio123.com"
@@ -584,7 +585,7 @@ class Client:
     def strategy_transaction_delete(
         self,
         strategy_id: int,
-        params: list[int],
+        params: List[int],
     ):
         """
         Strategy transaction delete
@@ -623,7 +624,7 @@ class Client:
     def strategy_rebalance(
         self,
         strategy_id: int,
-        params: dict = None
+        params: dict
     ):
         """
         Strategy rebalance
@@ -642,7 +643,7 @@ class Client:
     def strategy_rebalance_commit(
         self,
         strategy_id: int,
-        params: dict = None
+        params: dict
     ):
         """
         Strategy rebalance commit
