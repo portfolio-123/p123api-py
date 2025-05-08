@@ -3,8 +3,7 @@ import requests
 import time
 import pandas
 from string import Template
-import mimetypes
-from typing import List
+from typing import IO, Callable, Literal, Optional, Union
 
 
 ENDPOINT = "https://api.portfolio123.com"
@@ -135,7 +134,7 @@ class Client:
         data=None,
         headers=None,
         stop: bool = False,
-    ):
+    ) -> Optional[requests.Response]:
         """
         Request with authentication fallback, used by all requests (except authentication)
         :param name: request action
@@ -524,18 +523,15 @@ class Client:
         :param strategy_id:
         :return:
         """
+
         return self._req_with_auth_fallback(
             name="strategy details",
             method="GET",
             url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id),
         ).json()
-    
+
     def strategy_transactions(
-        self,
-        strategy_id: int,
-        start: str,
-        end: str,
-        to_pandas=False
+        self, strategy_id: int, start: str, end: str, to_pandas=False
     ):
         """
         Strategy transactions
@@ -544,19 +540,23 @@ class Client:
         :param end: end date in YYYY-MM-DD format
         :return:
         """
+
         ret = self._req_with_auth_fallback(
             name="strategy transactions",
             method="GET",
-            url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id) + f"?start={start}&end={end}",
+            url=self._endpoint
+            + STRATEGY_TRANS_PATH.substitute(id=strategy_id)
+            + f"?start={start}&end={end}",
         ).json()
         return pandas.DataFrame(ret["trans"]) if to_pandas else ret
-    
+
     def strategy_transaction_import(
         self,
         strategy_id: int,
-        file_path: str,
-        update_existing: bool = False,
-        make_rebal_dt_curr: bool = False,
+        data: Union[str, IO[str]],
+        content_type: Literal["text/csv", "text/tsv"] = "text/csv",
+        update_existing=False,
+        make_rebal_dt_curr=False,
     ):
         """
         Strategy transaction import
@@ -566,26 +566,29 @@ class Client:
         :param make_rebal_dt_curr: if True, the rebalancing date will be set to the current date
         :return:
         """
-        with open(file_path, "rb") as data:
-            get_params = []
-            if update_existing:
-                get_params.append("updateExisting=yes")
-            if make_rebal_dt_curr:
-                get_params.append("makeRebalDtCurr=yes")
-            get_params = "?" + "&".join(get_params) if len(get_params) else ""
-            content_type, _ = mimetypes.guess_type(file_path)
-            headers = {'Content-Type': content_type} if content_type else {}
-            return self._req_with_auth_fallback(
-                name="strategy transaction import",
-                url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id) + get_params,
-                data=data,
-                headers=headers,
-            ).json()
-        
+
+        url = self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id)
+
+        if update_existing:
+            url += "?updateExisting=1"
+            query_sep = "&"
+        else:
+            query_sep = "?"
+
+        if make_rebal_dt_curr:
+            url += query_sep + "makeRebalDtCurr=1"
+
+        return self._req_with_auth_fallback(
+            name="strategy transaction import",
+            url=url,
+            data=data,
+            headers={"Content-Type": content_type},
+        ).json()
+
     def strategy_transaction_delete(
         self,
         strategy_id: int,
-        params: List[int],
+        params: list[int],
     ):
         """
         Strategy transaction delete
@@ -599,12 +602,9 @@ class Client:
             url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
             params=params,
         ).json()
-    
+
     def strategy_holdings(
-        self,
-        strategy_id: int,
-        date: str = None,
-        to_pandas=False
+        self, strategy_id: int, date: Optional[str] = None, to_pandas=False
     ):
         """
         Strategy holdings
@@ -612,26 +612,25 @@ class Client:
         :param date: date in YYYY-MM-DD format, if None, current date is used
         :return:
         """
+
+        url = self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id)
+        if date is not None:
+            url += f"?date={date}"
+
         ret = self._req_with_auth_fallback(
-            name="strategy hldings",
-            method="GET",
-            url=self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id) +
-                (f"?date={date}" if date is not None else ""),
+            name="strategy hldings", method="GET", url=url
         ).json()
 
-        return pandas.DataFrame(ret) if to_pandas else ret
-    
-    def strategy_rebalance(
-        self,
-        strategy_id: int,
-        params: dict
-    ):
+        return pandas.DataFrame(ret["holdings"]) if to_pandas else ret
+
+    def strategy_rebalance(self, strategy_id: int, params: dict):
         """
         Strategy rebalance
         :param strategy_id:
         :param params:
         :return:
         """
+
         ret = self._req_with_auth_fallback(
             name="strategy rebalance",
             url=self._endpoint + STRATEGY_REBALANCE_PATH.substitute(id=strategy_id),
@@ -639,21 +638,19 @@ class Client:
         ).json()
 
         return ret
-    
-    def strategy_rebalance_commit(
-        self,
-        strategy_id: int,
-        params: dict
-    ):
+
+    def strategy_rebalance_commit(self, strategy_id: int, params: dict):
         """
         Strategy rebalance commit
         :param strategy_id:
         :param params:
         :return:
         """
+
         ret = self._req_with_auth_fallback(
             name="strategy rebalance commit",
-            url=self._endpoint + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id),
+            url=self._endpoint
+            + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id),
             params=params,
         ).json()
 
@@ -870,7 +867,7 @@ class Client:
         ).json()
 
 
-def req_with_retry(req, max_tries=None, **kwargs):
+def req_with_retry(req: Callable[..., requests.Response], max_tries=None, **kwargs):
     tries = 0
     if max_tries is None:
         max_tries = 5
