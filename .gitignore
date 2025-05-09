@@ -2,3 +2,4 @@ __pycache__/
 build/
 dist/
 p123api.egg-info
+test.py

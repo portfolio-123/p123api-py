@@ -3,7 +3,7 @@ import requests
 import time
 import pandas
 from string import Template
-from typing import IO, Callable, Literal, Optional, Union
+from typing import IO, Callable, List, Literal, Optional, Union
 
 
 ENDPOINT = "https://api.portfolio123.com"
@@ -61,9 +61,9 @@ class Client:
         self._token = None
 
         if not isinstance(api_id, str) or not api_id:
-            raise ClientException("api_id needs to be a non empty str")
+            raise ClientException("api_id needs to be a non-empty str")
         if not isinstance(api_key, str) or not api_key:
-            raise ClientException("api_key needs to be a non empty str")
+            raise ClientException("api_key needs to be a non-empty str")
 
         self._auth_params = {"apiId": api_id, "apiKey": api_key, **auth_extra}
         self._session = requests.Session()
@@ -544,9 +544,8 @@ class Client:
         ret = self._req_with_auth_fallback(
             name="strategy transactions",
             method="GET",
-            url=self._endpoint
-            + STRATEGY_TRANS_PATH.substitute(id=strategy_id)
-            + f"?start={start}&end={end}",
+            url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
+            params=[("start", start), ("end", end)],
         ).json()
         return pandas.DataFrame(ret["trans"]) if to_pandas else ret
 
@@ -567,20 +566,17 @@ class Client:
         :return:
         """
 
-        url = self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id)
-
+        get_params = []
         if update_existing:
-            url += "?updateExisting=1"
-            query_sep = "&"
-        else:
-            query_sep = "?"
+            get_params.append(("updateExisting", "1"))
 
         if make_rebal_dt_curr:
-            url += query_sep + "makeRebalDtCurr=1"
+            get_params.append(("makeRebalDtCurr", "1"))
 
         return self._req_with_auth_fallback(
             name="strategy transaction import",
-            url=url,
+            url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
+            params=get_params,
             data=data,
             headers={"Content-Type": content_type},
         ).json()
@@ -588,7 +584,7 @@ class Client:
     def strategy_transaction_delete(
         self,
         strategy_id: int,
-        params: list[int],
+        params: List[int],
     ):
         """
         Strategy transaction delete
@@ -613,12 +609,13 @@ class Client:
         :return:
         """
 
-        url = self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id)
-        if date is not None:
-            url += f"?date={date}"
+        get_params = [("date", date)] if date is not None else []
 
         ret = self._req_with_auth_fallback(
-            name="strategy hldings", method="GET", url=url
+            name="strategy hldings",
+            method="GET",
+            url=self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id),
+            params=get_params,
         ).json()
 
         return pandas.DataFrame(ret["holdings"]) if to_pandas else ret
@@ -659,7 +656,7 @@ class Client:
     def stock_factor_upload(
         self,
         factor_id: int,
-        file: str,
+        data: Union[str, IO[str]],
         column_separator: str = None,
         existing_data: str = None,
         date_format: str = None,
@@ -670,7 +667,7 @@ class Client:
         """
         Stock factor data upload
         :param factor_id:
-        :param file:
+        :param data:
         :param column_separator: comma, semicolon or tab
         :param existing_data: overwrite, skip or delete
         :param date_format: dd for day, mm for month and yyyy for year, any separator allowed (defaults to yyyy-mm-dd)
@@ -679,34 +676,27 @@ class Client:
         :param ignore_duplicates:
         :return:
         """
-        with open(file, "rb") as data:
-            get_params = []
-            if column_separator is not None:
-                get_params.append(f"columnSeparator={column_separator}")
-            if existing_data is not None:
-                get_params.append(f"existingData={existing_data}")
-            if date_format is not None:
-                get_params.append(f"dateFormat={date_format}")
-            if decimal_separator is not None:
-                get_params.append(f"decimalSeparator={decimal_separator}")
-            if ignore_errors is not None:
-                get_params.append(
-                    "onError={}".format("continue" if ignore_errors else "stop")
-                )
-            if ignore_duplicates is not None:
-                get_params.append(
-                    "onDuplicates={}".format(
-                        "continue" if ignore_duplicates else "stop"
-                    )
-                )
-            get_params = "?" + "&".join(get_params) if len(get_params) else ""
-            return self._req_with_auth_fallback(
-                name="stock factor data upload",
-                url=self._endpoint
-                + STOCK_FACTOR_UPLOAD_PATH.substitute(id=factor_id)
-                + get_params,
-                data=data,
-            ).json()
+        get_params = []
+        if column_separator is not None:
+            get_params.append(("columnSeparator", column_separator))
+        if existing_data is not None:
+            get_params.append(("existingData", existing_data))
+        if date_format is not None:
+            get_params.append(("dateFormat", date_format))
+        if decimal_separator is not None:
+            get_params.append(("decimalSeparator", decimal_separator))
+        if ignore_errors is not None:
+            get_params.append(("onError", "continue" if ignore_errors else "stop"))
+        if ignore_duplicates is not None:
+            get_params.append(
+                ("onDuplicates", "continue" if ignore_duplicates else "stop")
+            )
+        return self._req_with_auth_fallback(
+            name="stock factor data upload",
+            url=self._endpoint + STOCK_FACTOR_UPLOAD_PATH.substitute(id=factor_id),
+            params=get_params,
+            data=data,
+        ).json()
 
     def stock_factor_create_update(self, params: dict):
         """
@@ -758,29 +748,23 @@ class Client:
         with open(file, "rb") as data:
             get_params = []
             if existing_data is not None:
-                get_params.append(f"existingData={existing_data}")
+                get_params.append(("existingData", existing_data))
             if date_format is not None:
-                get_params.append(f"dateFormat={date_format}")
+                get_params.append(("dateFormat", date_format))
             if decimal_separator is not None:
-                get_params.append(f"decimalSeparator={decimal_separator}")
+                get_params.append(("decimalSeparator", decimal_separator))
             if ignore_errors is not None:
-                get_params.append(
-                    "onError={}".format("continue" if ignore_errors else "stop")
-                )
+                get_params.append(("onError", "continue" if ignore_errors else "stop"))
             if ignore_duplicates is not None:
                 get_params.append(
-                    "onDuplicates={}".format(
-                        "continue" if ignore_duplicates else "stop"
-                    )
+                    ("onDuplicates", "continue" if ignore_duplicates else "stop")
                 )
             if contains_header_row is not None:
-                get_params.append(f"headerRow={contains_header_row}")
-            get_params = "?" + "&".join(get_params) if len(get_params) else ""
+                get_params.append(("headerRow", contains_header_row))
             return self._req_with_auth_fallback(
                 name="data series upload",
-                url=self._endpoint
-                + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id)
-                + get_params,
+                url=self._endpoint + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id),
+                params=get_params,
                 data=data,
             ).json()
 
