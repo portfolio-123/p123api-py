@@ -725,7 +725,7 @@ class Client:
     def data_series_upload(
         self,
         series_id: int,
-        file: str,
+        data: Union[str, IO[str]],
         existing_data: str = None,
         date_format: str = None,
         decimal_separator: str = None,
@@ -745,28 +745,27 @@ class Client:
         :param contains_header_row:
         :return:
         """
-        with open(file, "rb") as data:
-            get_params = []
-            if existing_data is not None:
-                get_params.append(("existingData", existing_data))
-            if date_format is not None:
-                get_params.append(("dateFormat", date_format))
-            if decimal_separator is not None:
-                get_params.append(("decimalSeparator", decimal_separator))
-            if ignore_errors is not None:
-                get_params.append(("onError", "continue" if ignore_errors else "stop"))
-            if ignore_duplicates is not None:
-                get_params.append(
-                    ("onDuplicates", "continue" if ignore_duplicates else "stop")
-                )
-            if contains_header_row is not None:
-                get_params.append(("headerRow", contains_header_row))
-            return self._req_with_auth_fallback(
-                name="data series upload",
-                url=self._endpoint + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id),
-                params=get_params,
-                data=data,
-            ).json()
+        get_params = []
+        if existing_data is not None:
+            get_params.append(("existingData", existing_data))
+        if date_format is not None:
+            get_params.append(("dateFormat", date_format))
+        if decimal_separator is not None:
+            get_params.append(("decimalSeparator", decimal_separator))
+        if ignore_errors is not None:
+            get_params.append(("onError", "continue" if ignore_errors else "stop"))
+        if ignore_duplicates is not None:
+            get_params.append(
+                ("onDuplicates", "continue" if ignore_duplicates else "stop")
+            )
+        if contains_header_row is not None:
+            get_params.append(("headerRow", contains_header_row))
+        return self._req_with_auth_fallback(
+            name="data series upload",
+            url=self._endpoint + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id),
+            params=get_params,
+            data=data,
+        ).json()
 
     def data_series_create_update(self, params: dict):
         """
