@@ -18,6 +18,7 @@ RANK_RANKS_PATH = "/rank/ranks"
 RANK_PERF_PATH = "/rank/performance"
 RANK_TOUCH_PATH = Template("/rank/$id/touch")
 DATA_UNIVERSE_PATH = "/data/universe"
+DATA_PRICES_PATH = Template("/data/prices/$identifier")
 STRATEGY_DETAILS_PATH = Template("/strategy/$id")
 STRATEGY_HOLDINGS_PATH = Template("/strategy/$id/holdings")
 STRATEGY_REBALANCE_PATH = Template("/strategy/$id/rebalance")
@@ -130,6 +131,7 @@ class Client:
         name: str,
         method: str = "POST",
         url: str,
+        json=None,
         params=None,
         data=None,
         headers=None,
@@ -140,6 +142,7 @@ class Client:
         :param name: request action
         :param method: request method
         :param url: request url
+        :param json: request json
         :param params: request params
         :param data: request data
         :param headers: request headers
@@ -153,7 +156,8 @@ class Client:
                     self._session.post,
                     self._max_req_retries,
                     url=url,
-                    json=params,
+                    json=json,
+                    params=params,
                     verify=self._verify_requests,
                     timeout=self._timeout,
                     data=data,
@@ -167,18 +171,20 @@ class Client:
                     req_type,
                     self._max_req_retries,
                     url=url,
-                    json=params,
+                    json=json,
+                    params=params,
                     verify=self._verify_requests,
                     timeout=self._timeout,
                     headers=headers,
                 )
-        if resp is None or resp.status_code == 403:
+        if resp is None or resp.status_code == 401 or resp.status_code == 403:
             if not stop:
                 self.auth()
                 return self._req_with_auth_fallback(
                     name=name,
                     method=method,
                     url=url,
+                    json=json,
                     params=params,
                     data=data,
                     headers=headers,
@@ -204,7 +210,7 @@ class Client:
         ret = self._req_with_auth_fallback(
             name="screen rolling backtest",
             url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH,
-            params=params,
+            json=params,
         ).json()
 
         if to_pandas:
@@ -229,7 +235,7 @@ class Client:
         ret = self._req_with_auth_fallback(
             name="screen backtest",
             url=self._endpoint + SCREEN_BACKTEST_PATH,
-            params=params,
+            json=params,
         ).json()
 
         if to_pandas:
@@ -323,7 +329,7 @@ class Client:
         :return:
         """
         ret = self._req_with_auth_fallback(
-            name="screen backtest", url=self._endpoint + SCREEN_RUN_PATH, params=params
+            name="screen backtest", url=self._endpoint + SCREEN_RUN_PATH, json=params
         ).json()
 
         if to_pandas:
@@ -338,7 +344,7 @@ class Client:
         :return:
         """
         return self._req_with_auth_fallback(
-            name="universe update", url=self._endpoint + UNIVERSE_PATH, params=params
+            name="universe update", url=self._endpoint + UNIVERSE_PATH, json=params
         ).json()
 
     def rank_update(self, params: dict):
@@ -348,7 +354,7 @@ class Client:
         :return:
         """
         return self._req_with_auth_fallback(
-            name="ranking system update", url=self._endpoint + RANK_PATH, params=params
+            name="ranking system update", url=self._endpoint + RANK_PATH, json=params
         ).json()
 
     def data(self, params: dict, to_pandas=False):
@@ -359,7 +365,7 @@ class Client:
         :return:
         """
         ret = self._req_with_auth_fallback(
-            name="data", url=self._endpoint + DATA_PATH, params=params
+            name="data", url=self._endpoint + DATA_PATH, json=params
         ).json()
 
         if to_pandas:
@@ -397,7 +403,7 @@ class Client:
         :return:
         """
         ret = self._req_with_auth_fallback(
-            name="data universe", url=self._endpoint + DATA_UNIVERSE_PATH, params=params
+            name="data universe", url=self._endpoint + DATA_UNIVERSE_PATH, json=params
         ).json()
 
         if to_pandas:
@@ -459,7 +465,7 @@ class Client:
         ret = self._req_with_auth_fallback(
             name="ranking system ranks",
             url=self._endpoint + RANK_RANKS_PATH,
-            params=params,
+            json=params,
         ).json()
 
         if to_pandas:
@@ -503,7 +509,7 @@ class Client:
         return self._req_with_auth_fallback(
             name="ranking system performance",
             url=self._endpoint + RANK_PERF_PATH,
-            params=params,
+            json=params,
         ).json()
 
     def rank_touch(self, rank_id: int):
@@ -596,7 +602,7 @@ class Client:
             name="strategy transaction delete",
             method="DELETE",
             url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
-            params=params,
+            json=params,
         ).json()
 
     def strategy_holdings(
@@ -631,7 +637,7 @@ class Client:
         ret = self._req_with_auth_fallback(
             name="strategy rebalance",
             url=self._endpoint + STRATEGY_REBALANCE_PATH.substitute(id=strategy_id),
-            params=params,
+            json=params,
         ).json()
 
         return ret
@@ -648,7 +654,7 @@ class Client:
             name="strategy rebalance commit",
             url=self._endpoint
             + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id),
-            params=params,
+            json=params,
         ).json()
 
         return ret
@@ -707,7 +713,7 @@ class Client:
         return self._req_with_auth_fallback(
             name="stock factor create/update",
             url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH,
-            params=params,
+            json=params,
         ).json()
 
     def stock_factor_delete(self, factor_id: int):
@@ -776,7 +782,7 @@ class Client:
         return self._req_with_auth_fallback(
             name="data series create/update",
             url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH,
-            params=params,
+            json=params,
         ).json()
 
     def data_series_delete(self, series_id: int):
@@ -804,7 +810,7 @@ class Client:
         ret = self._req_with_auth_fallback(
             name="AI Factor predict",
             url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id),
-            params=params,
+            json=params,
         ).json()
 
         if to_pandas:
@@ -848,6 +854,20 @@ class Client:
             method="GET",
             url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id),
         ).json()
+    
+    def data_prices(self, identifier: Union[int, str], start: str, end: Optional[str], to_pandas=False):
+        """
+        """
+        get_params = [("start", start)]
+        if end is not None:
+            get_params.append(("end", end))
+        ret = self._req_with_auth_fallback(
+            name="download security prices",
+            method="GET",
+            url=self._endpoint + DATA_PRICES_PATH.substitute(identifier=identifier),
+            params=get_params
+        ).json()
+        return pandas.DataFrame(ret["prices"]) if to_pandas else ret
 
 
 def req_with_retry(req: Callable[..., requests.Response], max_tries=None, **kwargs):
