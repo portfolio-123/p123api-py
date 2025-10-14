@@ -21,6 +21,10 @@ DATA_UNIVERSE_PATH = "/data/universe"
 DATA_PRICES_PATH = Template("/data/prices/$identifier")
 STRATEGY_DETAILS_PATH = Template("/strategy/$id")
 STRATEGY_HOLDINGS_PATH = Template("/strategy/$id/holdings")
+STRATEGY_TRADING_SYSTEM_PATH = Template("/strategy/$id/trading-system")
+BOOK_TRADING_SYSTEM_PATH = Template("/strategy/$id/book-trading-system")
+SIM_RERUN_PATH = Template("/strategy/$id/rerun")
+BOOK_SIM_RERUN_PATH = Template("/strategy/$id/book-rerun")
 STRATEGY_REBALANCE_PATH = Template("/strategy/$id/rebalance")
 STRATEGY_REBALANCE_COMMIT_PATH = Template("/strategy/$id/rebalance/commit")
 STRATEGY_TRANS_PATH = Template("/strategy/$id/transactions")
@@ -625,6 +629,77 @@ class Client:
         ).json()
 
         return pandas.DataFrame(ret["holdings"]) if to_pandas else ret
+    
+    def strategy_trading_system(
+        self, strategy_id: int
+    ):
+        """
+        Strategy trading system
+        :param strategy_id:
+        :return:
+        """
+
+        return self._req_with_auth_fallback(
+            name="strategy trading system",
+            method="GET",
+            url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id)
+        ).json()
+    
+    def strategy_trading_system_update(self, strategy_id: int, params: dict):
+        """
+        Live strategy trading system update
+        :param strategy_id:
+        :param params:
+        :return:
+        """
+
+        return self._req_with_auth_fallback(
+            name="live strategy trading system update",
+            url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id),
+            json=params,
+        ).json()
+    
+    def book_trading_system_update(self, strategy_id: int, params: dict):
+        """
+        Live book trading system update
+        :param strategy_id:
+        :param params:
+        :return:
+        """
+
+        return self._req_with_auth_fallback(
+            name="live book trading system update",
+            url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=strategy_id),
+            json=params,
+        ).json()
+    
+    def strategy_rerun(self, strategy_id: int, params: dict):
+        """
+        Simulated strategy rerun
+        :param strategy_id:
+        :param params:
+        :return:
+        """
+
+        return self._req_with_auth_fallback(
+            name="simulated strategy rerun",
+            url=self._endpoint + SIM_RERUN_PATH.substitute(id=strategy_id),
+            json=params,
+        ).json()
+    
+    def book_rerun(self, strategy_id: int, params: dict):
+        """
+        Simulated book rerun
+        :param strategy_id:
+        :param params:
+        :return:
+        """
+
+        return self._req_with_auth_fallback(
+            name="simulated book rerun",
+            url=self._endpoint + BOOK_SIM_RERUN_PATH.substitute(id=strategy_id),
+            json=params,
+        ).json()
 
     def strategy_rebalance(self, strategy_id: int, params: dict):
         """
