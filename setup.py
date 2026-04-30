@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="p123api",
-    version="2.2.0",
+    version="3.0.0",
     author="Portfolio123",
     author_email="info@portfolio123.com",
     description="Portfolio123 API wrapper",
@@ -19,5 +19,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.6",
-    install_requires=["pandas", "requests"],
+    install_requires=["requests"],
+    extras_require={"pandas": ["pandas"]},
 )

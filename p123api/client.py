@@ -1,10 +1,6 @@
-from collections import defaultdict
 import requests
-import time
-import pandas
 from string import Template
 from typing import IO, Callable, List, Literal, Optional, Union
-
 
 ENDPOINT = "https://api.portfolio123.com"
 AUTH_PATH = "/auth"
@@ -218,6 +214,8 @@ class Client:
         ).json()
 
         if to_pandas:
+            import pandas
+
             rows = ret["rows"]
             ret["average"][0] = "Average"
             rows.append(ret["average"])
@@ -243,6 +241,8 @@ class Client:
         ).json()
 
         if to_pandas:
+            import pandas
+
             columns = [
                 "",
                 "Total Return",
@@ -337,6 +337,8 @@ class Client:
         ).json()
 
         if to_pandas:
+            import pandas
+
             ret = pandas.DataFrame(data=ret["rows"], columns=ret["columns"])
 
         return ret
@@ -373,6 +375,8 @@ class Client:
         ).json()
 
         if to_pandas:
+            import pandas
+
             raw_obj = dict(ret)
             with_cusips = params.get("cusips") is not None
             with_name = params.get("includeNames")
@@ -411,34 +415,38 @@ class Client:
         ).json()
 
         if to_pandas:
+            import pandas
+
             raw_obj = ret
-            names = params.get("names")
             f_indices = range(len(params["formulas"]))
+
+            names = params.get("names")
+            if names is None:
+                names = [f"formula{i + 1}" for i in f_indices]
+
             if params.get("asOfDt"):
                 for formula_idx in f_indices:
-                    name = (
-                        names[formula_idx]
-                        if names is not None
-                        else f"formula{formula_idx + 1}"
-                    )
+                    name = names[formula_idx]
                     ret[name] = ret["data"][formula_idx]
                 del ret["dt"], ret["cost"], ret["quotaRemaining"], ret["data"]
                 ret = pandas.DataFrame(ret)
             else:
+                includeNames = bool(params.get("includeNames"))
+                includeFigi = bool(params.get("figi"))
+
                 data = {"dates": [], "p123Uids": [], "tickers": []}
-                includeNames = False
-                if params.get("includeNames"):
+                if includeNames:
                     data["names"] = []
-                    includeNames = True
-                includeFigi = False
-                if params.get("figi"):
+                if includeFigi:
                     data["figi"] = []
-                    includeFigi = True
-                formulas = defaultdict(list)
+
+                date_data = [[] for _ in f_indices]
+
+                for formula_idx in f_indices:
+                    data[names[formula_idx]] = []
+
                 for dtObj in ret["dates"]:
-                    data["dates"].extend(
-                        dtObj["dt"] for _ in range(len(dtObj["p123Uids"]))
-                    )
+                    data["dates"].extend([dtObj["dt"]] * len(dtObj["p123Uids"]))
                     data["p123Uids"].extend(dtObj["p123Uids"])
                     data["tickers"].extend(dtObj["tickers"])
                     if includeNames:
@@ -446,14 +454,7 @@ class Client:
                     if includeFigi:
                         data["figi"].extend(dtObj["figi"])
                     for formula_idx in f_indices:
-                        formulas[formula_idx].extend(dtObj["data"][formula_idx])
-                for formula_idx in f_indices:
-                    name = (
-                        names[formula_idx]
-                        if names is not None
-                        else f"formula{formula_idx + 1}"
-                    )
-                    data[name] = formulas[formula_idx]
+                        date_data[formula_idx].extend(dtObj["data"][formula_idx])
                 ret = pandas.DataFrame(data)
             ret.attrs["raw_obj"] = raw_obj
 
@@ -473,6 +474,8 @@ class Client:
         ).json()
 
         if to_pandas:
+            import pandas
+
             names = dict()
             raw_obj = dict(ret)
             del ret["cost"], ret["quotaRemaining"], ret["dt"]
@@ -557,7 +560,13 @@ class Client:
             url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
             params=[("start", start), ("end", end)],
         ).json()
-        return pandas.DataFrame(ret["trans"]) if to_pandas else ret
+
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["trans"])
+
+        return ret
 
     def strategy_transaction_import(
         self,
@@ -628,11 +637,14 @@ class Client:
             params=get_params,
         ).json()
 
-        return pandas.DataFrame(ret["holdings"]) if to_pandas else ret
-    
-    def strategy_trading_system(
-        self, strategy_id: int
-    ):
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["holdings"])
+
+        return ret
+
+    def strategy_trading_system(self, strategy_id: int):
         """
         Strategy trading system
         :param strategy_id:
@@ -642,9 +654,10 @@ class Client:
         return self._req_with_auth_fallback(
             name="strategy trading system",
             method="GET",
-            url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id)
+            url=self._endpoint
+            + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id),
         ).json()
-    
+
     def strategy_trading_system_update(self, strategy_id: int, params: dict):
         """
         Live strategy trading system update
@@ -655,10 +668,11 @@ class Client:
 
         return self._req_with_auth_fallback(
             name="live strategy trading system update",
-            url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id),
+            url=self._endpoint
+            + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id),
             json=params,
         ).json()
-    
+
     def book_trading_system_update(self, strategy_id: int, params: dict):
         """
         Live book trading system update
@@ -672,7 +686,7 @@ class Client:
             url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=strategy_id),
             json=params,
         ).json()
-    
+
     def strategy_rerun(self, strategy_id: int, params: dict):
         """
         Simulated strategy rerun
@@ -686,7 +700,7 @@ class Client:
             url=self._endpoint + SIM_RERUN_PATH.substitute(id=strategy_id),
             json=params,
         ).json()
-    
+
     def book_rerun(self, strategy_id: int, params: dict):
         """
         Simulated book rerun
@@ -889,6 +903,8 @@ class Client:
         ).json()
 
         if to_pandas:
+            import pandas
+
             data = {"p123Uid": ret["p123Uids"], "ticker": ret["tickers"]}
             if "names" in ret:
                 data["name"] = ret["names"]
@@ -929,10 +945,15 @@ class Client:
             method="GET",
             url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id),
         ).json()
-    
-    def data_prices(self, identifier: Union[int, str], start: str, end: Optional[str], to_pandas=False):
-        """
-        """
+
+    def data_prices(
+        self,
+        identifier: Union[int, str],
+        start: str,
+        end: Optional[str],
+        to_pandas=False,
+    ):
+        """ """
         get_params = [("start", start)]
         if end is not None:
             get_params.append(("end", end))
@@ -940,9 +961,15 @@ class Client:
             name="download security prices",
             method="GET",
             url=self._endpoint + DATA_PRICES_PATH.substitute(identifier=identifier),
-            params=get_params
+            params=get_params,
         ).json()
-        return pandas.DataFrame(ret["prices"]) if to_pandas else ret
+
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["prices"])
+
+        return ret
 
 
 def req_with_retry(req: Callable[..., requests.Response], max_tries=None, **kwargs):
@@ -952,6 +979,8 @@ def req_with_retry(req: Callable[..., requests.Response], max_tries=None, **kwar
     resp = None
     while tries < max_tries:
         if tries > 0:
+            import time
+
             time.sleep(2 * tries)
         try:
             resp = req(**kwargs)
