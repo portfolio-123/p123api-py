@@ -3,7 +3,7 @@ import requests
 import time
 import pandas
 from string import Template
-from typing import IO, Callable, List, Literal, Optional, Union
+from typing import IO, Any, Callable, List, Literal, Optional, Union, overload
 
 
 ENDPOINT = "https://api.portfolio123.com"
@@ -32,6 +32,7 @@ STOCK_FACTOR_UPLOAD_PATH = Template("/stockFactor/upload/$id")
 STOCK_FACTOR_CREATE_UPDATE_PATH = "/stockFactor"
 STOCK_FACTOR_DOWNLOAD_PATH = Template("/stockFactor/$id")
 STOCK_FACTOR_DELETE_PATH = STOCK_FACTOR_DOWNLOAD_PATH
+STOCK_FACTOR_INFO_PATH = STOCK_FACTOR_CREATE_UPDATE_PATH
 DATA_SERIES_UPLOAD_PATH = Template("/dataSeries/upload/$id")
 DATA_SERIES_CREATE_UPDATE_PATH = "/dataSeries"
 DATA_SERIES_DELETE_PATH = Template("/dataSeries/$id")
@@ -943,6 +944,24 @@ class Client:
             params=get_params
         ).json()
         return pandas.DataFrame(ret["prices"]) if to_pandas else ret
+    
+
+    @overload 
+    def stock_factor_info(self, *, factor_id: int) -> Any:
+        ...
+    @overload 
+    def stock_factor_info(self, *, name: str) -> Any:
+        ...
+    def stock_factor_info(self, *, factor_id: Optional[int] = None, name: Optional[str] = None):
+        """
+        Stock factor info, only specify factor_id or name
+        """
+        return self._req_with_auth_fallback(
+            name="stock factor info",
+            method="GET",
+            url=self._endpoint + STOCK_FACTOR_INFO_PATH,
+            params={"name": name} if factor_id is None else {"id": factor_id}
+        ).json()
 
 
 def req_with_retry(req: Callable[..., requests.Response], max_tries=None, **kwargs):
