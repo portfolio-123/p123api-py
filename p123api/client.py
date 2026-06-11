@@ -3,7 +3,10 @@ import requests
 import time
 import pandas
 from string import Template
-from typing import IO, Callable, List, Literal, Optional, TypedDict, Union, overload
+from typing import IO, Callable, List, Literal, Optional, Union, overload
+from typing_extensions import deprecated
+
+from .types import DataSeriesInfoResult, DataSeriesResult, StockFactorInfoResult, StockFactorResult
 
 ENDPOINT = "https://api.portfolio123.com"
 AUTH_PATH = "/auth"
@@ -12,10 +15,10 @@ SCREEN_BACKTEST_PATH = "/screen/backtest"
 SCREEN_RUN_PATH = "/screen/run"
 UNIVERSE_PATH = "/universe"
 RANK_PATH = "/rank"
-DATA_PATH = "/data"
 RANK_RANKS_PATH = "/rank/ranks"
 RANK_PERF_PATH = "/rank/performance"
 RANK_TOUCH_PATH = Template("/rank/$id/touch")
+DATA_PATH = "/data"
 DATA_UNIVERSE_PATH = "/data/universe"
 DATA_PRICES_PATH = Template("/data/prices/$identifier")
 STRATEGY_DETAILS_PATH = Template("/strategy/$id")
@@ -30,13 +33,13 @@ STRATEGY_TRANS_PATH = Template("/strategy/$id/transactions")
 STOCK_FACTOR_UPLOAD_PATH = Template("/stockFactor/upload/$id")
 STOCK_FACTOR_CREATE_UPDATE_PATH = "/stockFactor"
 STOCK_FACTOR_DOWNLOAD_PATH = Template("/stockFactor/$id")
-STOCK_FACTOR_DELETE_PATH = STOCK_FACTOR_DOWNLOAD_PATH
-STOCK_FACTOR_INFO_PATH = STOCK_FACTOR_CREATE_UPDATE_PATH
+STOCK_FACTOR_DELETE_PATH = Template("/stockFactor/$id")
+STOCK_FACTOR_INFO_PATH = "/stockFactor"
 DATA_SERIES_UPLOAD_PATH = Template("/dataSeries/upload/$id")
 DATA_SERIES_CREATE_UPDATE_PATH = "/dataSeries"
+DATA_SERIES_INFO_PATH = "/dataSeries"
 DATA_SERIES_DELETE_PATH = Template("/dataSeries/$id")
 AIFACTOR_PREDICT_PATH = Template("/aiFactor/predict/$id")
-DATA_SERIES_INFO_PATH = DATA_SERIES_CREATE_UPDATE_PATH
 
 
 class ClientException(Exception):
@@ -63,29 +66,6 @@ class ClientItemNotFoundException(ClientException):
         super().__init__("Item not found", resp=resp)
 
 
-class SharedResult(TypedDict):
-    cost: int
-    quotaRemaining: str
-
-
-class DataSeriesResult(SharedResult):
-    dataSeriesId: int
-
-
-class DataSeriesInfoResult(DataSeriesResult):
-    name: str
-    description: str
-
-
-class StockFactorResult(SharedResult):
-    factorId: int
-
-
-class StockFactorInfoResult(StockFactorResult):
-    name: str
-    description: str
-
-
 class Client:
     """
     class for interfacing with P123 API
@@ -105,6 +85,7 @@ class Client:
 
         self._auth_params = {"apiId": api_id, "apiKey": api_key, **auth_extra}
         self._session = requests.Session()
+        self._method_map = {"GET": self._session.get, "POST": self._session.post, "DELETE": self._session.delete}
 
     def __enter__(self):
         return self
@@ -136,18 +117,19 @@ class Client:
         :return: bool
         """
         self._session.headers.clear()
-        resp = req_with_retry(
+        with req_with_retry(
             self._session.post,
             self._max_req_retries,
             url=self._endpoint + AUTH_PATH,
             json=self._auth_params,
             verify=self._verify_requests,
             timeout=30,
-        )
-        if resp.status_code == 200:
-            self._token = resp.text
-            self._session.headers.update({"Authorization": f"Bearer {resp.text}"})
-        else:
+        ) as resp:
+            if resp.status_code == 200:
+                self._token = resp.text
+                self._session.headers.update({"Authorization": f"Bearer {resp.text}"})
+                return
+
             if resp.status_code == 406:
                 message = "user account inactive"
             elif resp.status_code == 402:
@@ -163,61 +145,49 @@ class Client:
             raise ClientException(f"API authentication failed{message}", resp=resp)
 
     def _req_with_auth_fallback(
-        self, *, name: str, method: str = "POST", url: str, json=None, params=None, data=None, headers=None, stop: bool = False
-    ) -> requests.Response:
+        self, *, method: Literal["GET", "POST", "DELETE"] = "POST", url: str, json=None, params=None, data=None, headers=None
+    ):
         """
         Request with authentication fallback, used by all requests (except authentication)
-        :param name: request action
         :param method: request method
         :param url: request url
         :param json: request json
         :param params: request params
         :param data: request data
         :param headers: request headers
-        :param stop: flag to stop infinite authentication recursion
         :return: request response object
         """
-        resp = None
-        if self._session.headers.get("Authorization") is not None:
-            if method == "POST":
-                resp = req_with_retry(
-                    self._session.post,
-                    self._max_req_retries,
-                    url=url,
-                    json=json,
-                    params=params,
-                    verify=self._verify_requests,
-                    timeout=self._timeout,
-                    data=data,
-                    headers=headers,
-                )
-            else:
-                req_type = self._session.delete if method == "DELETE" else self._session.get
-                resp = req_with_retry(
-                    req_type,
-                    self._max_req_retries,
-                    url=url,
-                    json=json,
-                    params=params,
-                    verify=self._verify_requests,
-                    timeout=self._timeout,
-                    headers=headers,
-                )
+        reauth = False
+        while True:
+            if self._session.headers.get("Authorization") is None:
+                self.auth()
+            with req_with_retry(
+                self._method_map[method],
+                self._max_req_retries,
+                url=url,
+                json=json,
+                params=params,
+                verify=self._verify_requests,
+                timeout=self._timeout,
+                data=data,
+                headers=headers,
+            ) as resp:
 
-        if resp is None or ((resp.status_code == 401 or resp.status_code == 403) and not stop):
-            self.auth()
-            return self._req_with_auth_fallback(
-                name=name, method=method, url=url, json=json, params=params, data=data, headers=headers, stop=True
-            )
-        elif resp.status_code == 200:
-            return resp
+                if resp.status_code == 200:
+                    return resp.json()
 
-        message = resp.text
-        if not message and resp.status_code == 402:
-            message = "request quota exhausted"
-        if message:
-            message = ": " + message
-        raise ClientException.build(f"API request failed{message}", resp=resp)
+                if resp.status_code == 401 or resp.status_code == 403:
+                    del self._session.headers["Authorization"]
+                    if not reauth:
+                        reauth = True
+                        continue
+
+                message = resp.text
+                if not message and resp.status_code == 402:
+                    message = "request quota exhausted"
+                if message:
+                    message = ": " + message
+                raise ClientException.build(f"API request failed{message}", resp=resp)
 
     def screen_rolling_backtest(self, params: dict, to_pandas=False):
         """
@@ -226,9 +196,7 @@ class Client:
         :param to_pandas:
         :return:
         """
-        ret = self._req_with_auth_fallback(
-            name="screen rolling backtest", url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH, json=params
-        ).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH, json=params)
 
         if to_pandas:
             rows = ret["rows"]
@@ -249,7 +217,7 @@ class Client:
         :param to_pandas:
         :return:
         """
-        ret = self._req_with_auth_fallback(name="screen backtest", url=self._endpoint + SCREEN_BACKTEST_PATH, json=params).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_BACKTEST_PATH, json=params)
 
         if to_pandas:
             columns = [
@@ -327,7 +295,7 @@ class Client:
         :param to_pandas:
         :return:
         """
-        ret = self._req_with_auth_fallback(name="screen backtest", url=self._endpoint + SCREEN_RUN_PATH, json=params).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_RUN_PATH, json=params)
 
         if to_pandas:
             ret = pandas.DataFrame(data=ret["rows"], columns=ret["columns"])
@@ -340,7 +308,7 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(name="universe update", url=self._endpoint + UNIVERSE_PATH, json=params).json()
+        return self._req_with_auth_fallback(url=self._endpoint + UNIVERSE_PATH, json=params)
 
     def rank_update(self, params: dict):
         """
@@ -348,7 +316,7 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(name="ranking system update", url=self._endpoint + RANK_PATH, json=params).json()
+        return self._req_with_auth_fallback(url=self._endpoint + RANK_PATH, json=params)
 
     def data(self, params: dict, to_pandas=False):
         """
@@ -357,7 +325,7 @@ class Client:
         :param to_pandas:
         :return:
         """
-        ret = self._req_with_auth_fallback(name="data", url=self._endpoint + DATA_PATH, json=params).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + DATA_PATH, json=params)
 
         if to_pandas:
             raw_obj = dict(ret)
@@ -393,7 +361,7 @@ class Client:
         :param to_pandas:
         :return:
         """
-        ret = self._req_with_auth_fallback(name="data universe", url=self._endpoint + DATA_UNIVERSE_PATH, json=params).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + DATA_UNIVERSE_PATH, json=params)
 
         if to_pandas:
             raw_obj = ret
@@ -441,7 +409,7 @@ class Client:
         :param to_pandas:
         :return:
         """
-        ret = self._req_with_auth_fallback(name="ranking system ranks", url=self._endpoint + RANK_RANKS_PATH, json=params).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + RANK_RANKS_PATH, json=params)
 
         if to_pandas:
             names = dict()
@@ -481,14 +449,14 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(name="ranking system performance", url=self._endpoint + RANK_PERF_PATH, json=params).json()
+        return self._req_with_auth_fallback(url=self._endpoint + RANK_PERF_PATH, json=params)
 
     def rank_touch(self, rank_id: int):
         """
         Rank touch
         :param rank_id:
         """
-        self._req_with_auth_fallback(name="rank touch", method="POST", url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id))
+        self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id))
 
     def strategy(self, strategy_id: int):
         """
@@ -497,9 +465,7 @@ class Client:
         :return:
         """
 
-        return self._req_with_auth_fallback(
-            name="strategy details", method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id)
-        ).json()
+        return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id))
 
     def strategy_transactions(self, strategy_id: int, start: str, end: str, to_pandas=False):
         """
@@ -511,11 +477,8 @@ class Client:
         """
 
         ret = self._req_with_auth_fallback(
-            name="strategy transactions",
-            method="GET",
-            url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
-            params=[("start", start), ("end", end)],
-        ).json()
+            method="GET", url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id), params=[("start", start), ("end", end)]
+        )
         return pandas.DataFrame(ret["trans"]) if to_pandas else ret
 
     def strategy_transaction_import(
@@ -543,12 +506,11 @@ class Client:
             get_params.append(("makeRebalDtCurr", "1"))
 
         return self._req_with_auth_fallback(
-            name="strategy transaction import",
             url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
             params=get_params,
             data=data,
             headers={"Content-Type": content_type},
-        ).json()
+        )
 
     def strategy_transaction_delete(self, strategy_id: int, params: List[int]):
         """
@@ -558,11 +520,8 @@ class Client:
         :return:
         """
         return self._req_with_auth_fallback(
-            name="strategy transaction delete",
-            method="DELETE",
-            url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id),
-            json=params,
-        ).json()
+            method="DELETE", url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id), json=params
+        )
 
     def strategy_holdings(self, strategy_id: int, date: Optional[str] = None, to_pandas=False):
         """
@@ -575,8 +534,8 @@ class Client:
         get_params = [("date", date)] if date is not None else []
 
         ret = self._req_with_auth_fallback(
-            name="strategy hldings", method="GET", url=self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id), params=get_params
-        ).json()
+            method="GET", url=self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id), params=get_params
+        )
 
         return pandas.DataFrame(ret["holdings"]) if to_pandas else ret
 
@@ -587,9 +546,7 @@ class Client:
         :return:
         """
 
-        return self._req_with_auth_fallback(
-            name="strategy trading system", method="GET", url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id)
-        ).json()
+        return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id))
 
     def strategy_trading_system_update(self, strategy_id: int, params: dict):
         """
@@ -599,11 +556,7 @@ class Client:
         :return:
         """
 
-        return self._req_with_auth_fallback(
-            name="live strategy trading system update",
-            url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id),
-            json=params,
-        ).json()
+        return self._req_with_auth_fallback(url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
 
     def book_trading_system_update(self, strategy_id: int, params: dict):
         """
@@ -613,9 +566,7 @@ class Client:
         :return:
         """
 
-        return self._req_with_auth_fallback(
-            name="live book trading system update", url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params
-        ).json()
+        return self._req_with_auth_fallback(url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
 
     def strategy_rerun(self, strategy_id: int, params: dict):
         """
@@ -625,9 +576,7 @@ class Client:
         :return:
         """
 
-        return self._req_with_auth_fallback(
-            name="simulated strategy rerun", url=self._endpoint + SIM_RERUN_PATH.substitute(id=strategy_id), json=params
-        ).json()
+        return self._req_with_auth_fallback(url=self._endpoint + SIM_RERUN_PATH.substitute(id=strategy_id), json=params)
 
     def book_rerun(self, strategy_id: int, params: dict):
         """
@@ -637,9 +586,7 @@ class Client:
         :return:
         """
 
-        return self._req_with_auth_fallback(
-            name="simulated book rerun", url=self._endpoint + BOOK_SIM_RERUN_PATH.substitute(id=strategy_id), json=params
-        ).json()
+        return self._req_with_auth_fallback(url=self._endpoint + BOOK_SIM_RERUN_PATH.substitute(id=strategy_id), json=params)
 
     def strategy_rebalance(self, strategy_id: int, params: dict):
         """
@@ -649,9 +596,7 @@ class Client:
         :return:
         """
 
-        ret = self._req_with_auth_fallback(
-            name="strategy rebalance", url=self._endpoint + STRATEGY_REBALANCE_PATH.substitute(id=strategy_id), json=params
-        ).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + STRATEGY_REBALANCE_PATH.substitute(id=strategy_id), json=params)
 
         return ret
 
@@ -663,9 +608,7 @@ class Client:
         :return:
         """
 
-        ret = self._req_with_auth_fallback(
-            name="strategy rebalance commit", url=self._endpoint + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id), json=params
-        ).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id), json=params)
 
         return ret
 
@@ -706,11 +649,8 @@ class Client:
         if ignore_duplicates is not None:
             get_params.append(("onDuplicates", "continue" if ignore_duplicates else "stop"))
         return self._req_with_auth_fallback(
-            name="stock factor data upload",
-            url=self._endpoint + STOCK_FACTOR_UPLOAD_PATH.substitute(id=factor_id),
-            params=get_params,
-            data=data,
-        ).json()
+            url=self._endpoint + STOCK_FACTOR_UPLOAD_PATH.substitute(id=factor_id), params=get_params, data=data
+        )
 
     def stock_factor_create_update(self, params: dict) -> StockFactorResult:
         """
@@ -718,9 +658,7 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(
-            name="stock factor create/update", url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params
-        ).json()
+        return self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params)
 
     def stock_factor_delete(self, factor_id: int):
         """
@@ -728,9 +666,7 @@ class Client:
         :param factor_id: id of the data stock factor to delete
         :return:
         """
-        return self._req_with_auth_fallback(
-            name="stock factor delete", method="DELETE", url=self._endpoint + STOCK_FACTOR_DELETE_PATH.substitute(id=factor_id)
-        ).json()
+        return self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_DELETE_PATH.substitute(id=factor_id), method="DELETE")
 
     def data_series_upload(
         self,
@@ -746,7 +682,7 @@ class Client:
         """
         Data series upload
         :param series_id:
-        :param file:
+        :param data:
         :param existing_data: overwrite, skip or delete
         :param date_format: dd for day, mm for month and yyyy for year, any separator allowed (defaults to yyyy-mm-dd)
         :param decimal_separator: . or ,
@@ -769,8 +705,8 @@ class Client:
         if contains_header_row is not None:
             get_params.append(("headerRow", contains_header_row))
         return self._req_with_auth_fallback(
-            name="data series upload", url=self._endpoint + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id), params=get_params, data=data
-        ).json()
+            url=self._endpoint + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id), params=get_params, data=data
+        )
 
     def data_series_create_update(self, params: dict) -> DataSeriesResult:
         """
@@ -778,9 +714,7 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(
-            name="data series create/update", url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params
-        ).json()
+        return self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params)
 
     def data_series_delete(self, series_id: int):
         """
@@ -788,9 +722,7 @@ class Client:
         :param series_id: id of the data series to delete
         :return:
         """
-        return self._req_with_auth_fallback(
-            name="data series delete", method="DELETE", url=self._endpoint + DATA_SERIES_DELETE_PATH.substitute(id=series_id)
-        ).json()
+        return self._req_with_auth_fallback(method="DELETE", url=self._endpoint + DATA_SERIES_DELETE_PATH.substitute(id=series_id))
 
     def get_api_id(self):
         return self._auth_params["apiId"]
@@ -802,9 +734,7 @@ class Client:
         :param params:
         :return:
         """
-        ret = self._req_with_auth_fallback(
-            name="AI Factor predict", url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id), json=params
-        ).json()
+        ret = self._req_with_auth_fallback(url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id), json=params)
 
         if to_pandas:
             data = {"p123Uid": ret["p123Uids"], "ticker": ret["tickers"]}
@@ -829,13 +759,11 @@ class Client:
 
     def stock_factor_download(self, factor_id: int):
         """
-        Strategy details
-        :param strategy_id:
+        Stock factor download
+        :param factor_id:
         :return:
         """
-        return self._req_with_auth_fallback(
-            name="stock factor download", method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id)
-        ).json()
+        return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
     def data_prices(self, identifier: Union[int, str], start: str, end: Optional[str], to_pandas=False):
         """ """
@@ -843,58 +771,60 @@ class Client:
         if end is not None:
             get_params.append(("end", end))
         ret = self._req_with_auth_fallback(
-            name="download security prices",
-            method="GET",
-            url=self._endpoint + DATA_PRICES_PATH.substitute(identifier=identifier),
-            params=get_params,
-        ).json()
+            method="GET", url=self._endpoint + DATA_PRICES_PATH.substitute(identifier=identifier), params=get_params
+        )
         return pandas.DataFrame(ret["prices"]) if to_pandas else ret
 
     @overload
+    def stock_factor_info(self, *, id: int) -> StockFactorInfoResult: ...
+    @overload
+    @deprecated("use overload accepting `id` parameter instead")
     def stock_factor_info(self, *, factor_id: int) -> StockFactorInfoResult: ...
     @overload
     def stock_factor_info(self, *, name: str) -> StockFactorInfoResult: ...
-    def stock_factor_info(self, *, factor_id: Optional[int] = None, name: Optional[str] = None) -> StockFactorInfoResult:
+    def stock_factor_info(
+        self, *, id: Optional[int] = None, factor_id: Optional[int] = None, name: Optional[str] = None
+    ) -> StockFactorInfoResult:
         """
         Stock factor info, only specify factor_id or name
         """
-        return self._req_with_auth_fallback(
-            name="stock factor info",
-            method="GET",
-            url=self._endpoint + STOCK_FACTOR_INFO_PATH,
-            params={"name": name} if factor_id is None else {"id": factor_id},
-        ).json()
+        if id is not None:
+            params = {"id": id}
+        elif factor_id is not None:
+            params = {"id": factor_id}
+        else:
+            params = {"name": name}
+        return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params)
 
     @overload
-    def data_series_info(self, *, data_series_id: int) -> DataSeriesInfoResult: ...
+    def data_series_info(self, *, id: int) -> DataSeriesInfoResult: ...
     @overload
     def data_series_info(self, *, name: str) -> DataSeriesInfoResult: ...
-    def data_series_info(self, *, data_series_id: Optional[int] = None, name: Optional[str] = None) -> DataSeriesInfoResult:
+    def data_series_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> DataSeriesInfoResult:
         """
         Data series info, only specify factor_id or name
         """
         return self._req_with_auth_fallback(
-            name="stock factor info",
-            method="GET",
-            url=self._endpoint + DATA_SERIES_INFO_PATH,
-            params={"name": name} if data_series_id is None else {"id": data_series_id},
-        ).json()
+            method="GET", url=self._endpoint + DATA_SERIES_INFO_PATH, params={"name": name} if id is None else {"id": id}
+        )
 
 
-def req_with_retry(req: Callable[..., requests.Response], max_tries=None, **kwargs):
+def req_with_retry(req: Callable[..., requests.Response], max_tries=5, **kwargs):
     tries = 0
-    if max_tries is None:
-        max_tries = 5
-    exception = None
-    while tries < max_tries:
+    while True:
         if tries > 0:
             time.sleep(2 * tries)
-        exception = None
         try:
             resp = req(**kwargs)
+            exception = None
+        except requests.ConnectionError as e:
+            resp = None
+            exception = e
+        if resp is not None:
             if resp.status_code < 500:
                 return resp
-        except requests.ConnectionError as e:
-            exception = e
+            resp.close()
         tries += 1
+        if tries >= max_tries:
+            break
     raise ClientException("Cannot connect to API", exception=exception)
