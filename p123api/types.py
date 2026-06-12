@@ -22,3 +22,9 @@ class StockFactorResult(SharedResult):
 class StockFactorInfoResult(StockFactorResult):
     name: str
     description: str
+
+
+class StrategyInfoResult(TypedDict):
+    strategyId: int
+    name: str
+    description: str
