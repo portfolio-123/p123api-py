@@ -473,17 +473,17 @@ class Client:
         :param type: Ranking method type ["Stock", "ETF"]
         :return: rank_id:
         """
-        data: dict = {"name": name, "nodes": nodes, "currency": currency}
+        return self._req_with_auth_fallback(
+            method="POST",
+            url=self._endpoint + RANK_CREATE,
+            json={"name": name, "nodes": nodes, "currency": currency, "type": type, "rankingMethod": rankingMethod},
+        )
 
-        if type:
-            data["type"] = type
-
-        if rankingMethod:
-            data["rankingMethod"] = rankingMethod
-
-        return self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_CREATE, json=data)
-
-    def rank_get(self, id: Optional[int] = None, name: Optional[str] = None) -> RankInfoResult:
+    @overload
+    def rank_get(self, *, id: int) -> RankInfoResult: ...
+    @overload
+    def rank_get(self, *, name: str) -> RankInfoResult: ...
+    def rank_get(self, *, id: Optional[int] = None, name: Optional[str] = None) -> RankInfoResult:
         """
         Gets Rank info
 
