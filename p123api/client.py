@@ -6,7 +6,7 @@ from string import Template
 from typing import IO, Callable, List, Literal, Optional, Union, overload
 from typing_extensions import deprecated
 
-from .types import DataSeriesInfoResult, DataSeriesResult, StockFactorInfoResult, StockFactorResult
+from .types import  DataSeriesInfoResult, DataSeriesResult, IdResult, RankInfoResult, StockFactorInfoResult, StockFactorResult
 
 ENDPOINT = "https://api.portfolio123.com"
 AUTH_PATH = "/auth"
@@ -18,6 +18,7 @@ RANK_PATH = "/rank"
 RANK_RANKS_PATH = "/rank/ranks"
 RANK_PERF_PATH = "/rank/performance"
 RANK_TOUCH_PATH = Template("/rank/$id/touch")
+RANK_CREATE = "/rank/create"
 DATA_PATH = "/data"
 DATA_UNIVERSE_PATH = "/data/universe"
 DATA_PRICES_PATH = Template("/data/prices/$identifier")
@@ -30,6 +31,8 @@ BOOK_SIM_RERUN_PATH = Template("/strategy/$id/book-rerun")
 STRATEGY_REBALANCE_PATH = Template("/strategy/$id/rebalance")
 STRATEGY_REBALANCE_COMMIT_PATH = Template("/strategy/$id/rebalance/commit")
 STRATEGY_TRANS_PATH = Template("/strategy/$id/transactions")
+STRATEGY_COPY_PATH = Template("/strategy/$id/copy")
+BOOK_COPY_PATH = Template("/strategy/$id/copy-book")
 STOCK_FACTOR_UPLOAD_PATH = Template("/stockFactor/upload/$id")
 STOCK_FACTOR_CREATE_UPDATE_PATH = "/stockFactor"
 STOCK_FACTOR_DOWNLOAD_PATH = Template("/stockFactor/$id")
@@ -457,6 +460,45 @@ class Client:
         :param rank_id:
         """
         self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id))
+    
+    def rank_create(self, name: str, nodes:str,*, rankingMethod: Optional[Literal[0, 2, 4, 1]] = None, type: Optional[Literal["Stock", "ETF"]] = None, currency: str) -> IdResult:
+        """
+        Creates Ranking System
+
+        :param name: Rank name
+        :param nodes: Rank nodes
+        :param rankingMethod: Ranking method [0, 2, 4, 1]
+        :param type: Ranking method type ["Stock", "ETF"]
+        :return: rank_id:
+        """
+        data: dict ={"name":name, "nodes":nodes, "currency":currency} 
+
+        if(type):
+            data["type"] = type
+
+        if(rankingMethod):
+            data["rankingMethod"] = rankingMethod
+        
+        return self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_CREATE, json=data)
+
+    def rank_get(self, id: Optional[int]=None, name:Optional[str] = None) -> RankInfoResult:
+        """
+        Gets Rank info 
+
+        :param id: Rank Id
+        :param name: Rank name
+        :return: RankInfoResult object containing:
+        - name (str)
+        - id (int)
+        - xml (str)
+        - currency (str)
+        - description (str)
+        - rankingMethod (int)
+        - type (Literal["Stock", "ETF"])
+        - groupUid (int)
+        - resolveGroupUid (int)
+        """
+        return self._req_with_auth_fallback(method="GET", url=self._endpoint + RANK_PATH, params={"id":id, "name":name})
 
     def strategy(self, strategy_id: int):
         """
@@ -466,6 +508,28 @@ class Client:
         """
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id))
+
+    def strategy_copy(self, id: int, name:str, type: Optional[Literal["PTF", "SIM"]]) -> IdResult:
+        """
+        Strategy copy
+
+        :param id: Strategy Id
+        :param name: name of the strategy copy
+        :param type: type of the strategy copy ("PTF"|"SIM")
+        :return: id
+        """
+        return self._req_with_auth_fallback(method="POST", url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id), json={"name":name, "type":type})
+
+    def book_copy(self, id: int, name:str, type: Optional[Literal["BOOK", "BOOKSIM"]]) -> IdResult:
+        """
+        Book copy
+
+        :param book_id:
+        :param name: name of the book copy
+        :param type: type of the book copy ("BOOK"|"BOOKSIM")
+        :return: id
+        """
+        return self._req_with_auth_fallback(method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name":name, "type":type})
 
     def strategy_transactions(self, strategy_id: int, start: str, end: str, to_pandas=False):
         """

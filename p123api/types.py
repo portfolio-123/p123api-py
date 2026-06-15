@@ -1,10 +1,11 @@
-from typing import TypedDict
-
+from typing import Literal, Optional, TypedDict
 
 class SharedResult(TypedDict):
     cost: int
     quotaRemaining: str
 
+class IdResult(SharedResult):
+    id: int
 
 class DataSeriesResult(SharedResult):
     dataSeriesId: int
@@ -22,3 +23,14 @@ class StockFactorResult(SharedResult):
 class StockFactorInfoResult(StockFactorResult):
     name: str
     description: str
+
+class RankInfoResult(SharedResult):
+    name: str
+    id: int
+    xml: str
+    currency: str
+    rankingMethod: int
+    type: Literal["Stock", "ETF"]
+    description: Optional[str]
+    groupUid: int
+    resolveGroupUid: int
