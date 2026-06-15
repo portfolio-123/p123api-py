@@ -6,7 +6,7 @@ from string import Template
 from typing import IO, Callable, List, Literal, Optional, Union, overload
 from typing_extensions import deprecated
 
-from .types import DataSeriesInfoResult, DataSeriesResult, IdResult, RankInfoResult, StockFactorInfoResult, StockFactorResult
+from .types import DataSeriesInfoResult, DataSeriesResult, IdResult, RankInfoResult, RankingMethod, StockFactorInfoResult, StockFactorResult
 
 ENDPOINT = "https://api.portfolio123.com"
 AUTH_PATH = "/auth"
@@ -462,15 +462,22 @@ class Client:
         self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id))
 
     def rank_create(
-        self, name: str, nodes: str, *, rankingMethod: Literal[2, 4, 1] = 2, type: Literal["Stock", "ETF"] = "Stock", currency: str
+        self,
+        name: str,
+        nodes: str,
+        *,
+        rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
+        type: Literal["Stock", "ETF"] = "Stock",
+        currency="USD",
     ) -> IdResult:
         """
         Creates Ranking System
 
         :param name: Rank name
-        :param nodes: Rank nodes
-        :param rankingMethod: Ranking method [2, 4, 1]
+        :param nodes: Rank nodes XML
+        :param rankingMethod: Ranking method
         :param type: Ranking method type ["Stock", "ETF"]
+        :param currency: Ranking method currency. Example: USD
         :return: rank_id:
         """
         return self._req_with_auth_fallback(
