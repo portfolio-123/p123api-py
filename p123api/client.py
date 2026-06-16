@@ -873,7 +873,7 @@ class Client:
         self, *, id: Optional[int] = None, factor_id: Optional[int] = None, name: Optional[str] = None
     ) -> StockFactorInfoResult:
         """
-        Stock factor info, only specify factor_id or name
+        Retrieves stock factor info, only accepts id or name.
         """
         if id is not None:
             params = {"id": id}
@@ -889,7 +889,7 @@ class Client:
     def data_series_info(self, *, name: str) -> DataSeriesInfoResult: ...
     def data_series_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> DataSeriesInfoResult:
         """
-        Data series info, only specify factor_id or name
+        Retrieves data series info, only accepts id or name.
         """
         return self._req_with_auth_fallback(
             method="GET", url=self._endpoint + DATA_SERIES_INFO_PATH, params={"name": name} if id is None else {"id": id}
@@ -901,7 +901,12 @@ class Client:
     def strategy_info(self, *, name: str) -> StrategyInfoResult: ...
     def strategy_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> StrategyInfoResult:
         """
-        Strategy info, only specify factor_id or name
+        Retrieves strategy info, only accepts id or name.
+
+        :param id: id of the strategy
+        :param name: name of the strategy
+        :return:
+        :rtype: :class:`StrategyInfoResult`
         """
         return self._req_with_auth_fallback(
             method="GET", url=self._endpoint + STRATEGY_INFO_PATH, params={"name": name} if id is None else {"id": id}

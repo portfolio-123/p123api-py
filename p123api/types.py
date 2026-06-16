@@ -47,7 +47,7 @@ class RankingMethod(IntEnum):
     NORMAL_DISTRIBUTION = 1
 
 
-class StrategyInfoResult(TypedDict):
+class StrategyInfoResult(SharedResult):
     strategyId: int
     name: str
     description: str
