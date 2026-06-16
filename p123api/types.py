@@ -45,3 +45,9 @@ class RankingMethod(IntEnum):
     PERCENTILE_NA_NEGATIVE = 2
     PERCENTILE_NA_NEUTRAL = 4
     NORMAL_DISTRIBUTION = 1
+
+
+class StrategyInfoResult(TypedDict):
+    strategyId: int
+    name: str
+    description: str
