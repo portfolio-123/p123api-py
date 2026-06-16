@@ -6,7 +6,16 @@ from string import Template
 from typing import IO, Callable, List, Literal, Optional, Union, overload
 from typing_extensions import deprecated
 
-from .types import DataSeriesInfoResult, DataSeriesResult, IdResult, RankInfoResult, RankingMethod, StockFactorInfoResult, StockFactorResult
+from .types import (
+    DataSeriesInfoResult,
+    DataSeriesResult,
+    IdResult,
+    RankInfoResult,
+    RankingMethod,
+    StockFactorInfoResult,
+    StockFactorResult,
+    StrategyInfoResult,
+)
 
 ENDPOINT = "https://api.portfolio123.com"
 AUTH_PATH = "/auth"
@@ -28,6 +37,7 @@ STRATEGY_TRADING_SYSTEM_PATH = Template("/strategy/$id/trading-system")
 BOOK_TRADING_SYSTEM_PATH = Template("/strategy/$id/book-trading-system")
 SIM_RERUN_PATH = Template("/strategy/$id/rerun")
 BOOK_SIM_RERUN_PATH = Template("/strategy/$id/book-rerun")
+STRATEGY_INFO_PATH = "/strategy"
 STRATEGY_REBALANCE_PATH = Template("/strategy/$id/rebalance")
 STRATEGY_REBALANCE_COMMIT_PATH = Template("/strategy/$id/rebalance/commit")
 STRATEGY_TRANS_PATH = Template("/strategy/$id/transactions")
@@ -883,6 +893,18 @@ class Client:
         """
         return self._req_with_auth_fallback(
             method="GET", url=self._endpoint + DATA_SERIES_INFO_PATH, params={"name": name} if id is None else {"id": id}
+        )
+
+    @overload
+    def strategy_info(self, *, id: int) -> StrategyInfoResult: ...
+    @overload
+    def strategy_info(self, *, name: str) -> StrategyInfoResult: ...
+    def strategy_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> StrategyInfoResult:
+        """
+        Strategy info, only specify factor_id or name
+        """
+        return self._req_with_auth_fallback(
+            method="GET", url=self._endpoint + STRATEGY_INFO_PATH, params={"name": name} if id is None else {"id": id}
         )
 
 
