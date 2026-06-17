@@ -5,9 +5,6 @@ import pandas
 from string import Template
 from typing import IO, Callable, List, Literal, Optional, Union, overload
 from typing_extensions import deprecated
-import numpy
-
-numpy.any(32)
 
 from .types import (
     DataSeriesInfoResult,
@@ -963,9 +960,9 @@ class Client:
         Examples:
             >>> client.stock_factor_info(id=123)
             {
-                factorId: 123,
-                name: 'Stock factor name',
-                description: 'Stock factor description'
+                'factorId': 123,
+                'name': 'Stock factor name',
+                'description': 'Stock factor description'
             }
         """
         ...
@@ -984,9 +981,9 @@ class Client:
         Examples:
             >>> client.stock_factor_info(name='Stock factor name')
             {
-                factorId: 123,
-                name: 'Stock factor name',
-                description: 'Stock factor description'
+                'factorId': 123,
+                'name': 'Stock factor name',
+                'description': 'Stock factor description'
             }
         """
         ...
@@ -1009,9 +1006,9 @@ class Client:
         Examples:
             >>> client.stock_factor_info(factor_id=123)
             {
-                factorId: 123,
-                name: 'Stock factor name',
-                description: 'Stock factor description'
+                'factorId': 123,
+                'name': 'Stock factor name',
+                'description': 'Stock factor description'
             }
         """
         ...
@@ -1041,9 +1038,9 @@ class Client:
         Examples:
             >>> client.data_series_info(id=123)
             {
-                dataSeriesId: 123,
-                name: 'Data series name',
-                description: 'Data series description'
+                'dataSeriesId': 123,
+                'name': 'Data series name',
+                'description': 'Data series description'
             }
         """
         ...
@@ -1062,9 +1059,9 @@ class Client:
         Examples:
             >>> client.data_series_info(name='Data series name')
             {
-                dataSeriesId: 123,
-                name: 'Data series name',
-                description: 'Data series description'
+                'dataSeriesId': 123,
+                'name': 'Data series name',
+                'description': 'Data series description'
             }
         """
         ...
@@ -1088,9 +1085,9 @@ class Client:
         Examples:
             >>> client.strategy_info(id=123)
             {
-                strategyId: 123,
-                name: 'Strategy name',
-                description: 'Strategy description'
+                'strategyId': 123,
+                'name': 'Strategy name',
+                'description': 'Strategy description'
             }
         """
         ...
@@ -1109,9 +1106,9 @@ class Client:
         Examples:
             >>> client.strategy_info(name='Strategy name')
             {
-                strategyId: 123,
-                name: 'Strategy name',
-                description: 'Strategy description'
+                'strategyId': 123,
+                'name': 'Strategy name',
+                'description': 'Strategy description'
             }
         """
         ...
