@@ -5,6 +5,9 @@ import pandas
 from string import Template
 from typing import IO, Callable, List, Literal, Optional, Union, overload
 from typing_extensions import deprecated
+import numpy
+
+numpy.any(32)
 
 from .types import (
     DataSeriesInfoResult,
@@ -481,15 +484,35 @@ class Client:
         currency="USD",
     ) -> IdResult:
         """
-        Creates Ranking System
+        Creates a new ranking system.
 
-        :param name: Rank name
-        :param nodes: Rank nodes XML
-        :param rankingMethod: Ranking method
-        :param type: Ranking method type ["Stock", "ETF"]
-        :param currency: Ranking method currency. Example: USD
-        :return: rank_id:
+        Creates a ranking system based on the provided nodes and configuration parameters.
+
+        Args:
+            name: Ranking system name.
+            nodes: Ranking system nodes XML.
+            rankingMethod: Ranking method to be used.
+            type: Ranking method type. Use "Stock" or "ETF".
+            currency: Ranking method currency (e.g., "USD").
+
+        Returns:
+            A dictionary containing the new ranking system's details.
+
+        Examples:
+            >>> client.rank_create(
+            ...     'New Ranking System',
+            ...     '<RankingSystem RankType="Higher">...</RankingSystem>',
+            ...     rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
+            ...     type='Stock',
+            ...     currency='USD'
+            ... )
+            {
+                'id': 98765,
+                'cost': 1,
+                'quotaRemaining': 45678
+            }
         """
+
         return self._req_with_auth_fallback(
             method="POST",
             url=self._endpoint + RANK_CREATE,
@@ -497,26 +520,64 @@ class Client:
         )
 
     @overload
-    def rank_get(self, *, id: int) -> RankInfoResult: ...
-    @overload
-    def rank_get(self, *, name: str) -> RankInfoResult: ...
-    def rank_get(self, *, id: Optional[int] = None, name: Optional[str] = None) -> RankInfoResult:
+    def rank_get(self, *, id: int) -> RankInfoResult:
         """
-        Gets Rank info
+        Gets information for a specific ranking system.
 
-        :param id: Rank Id
-        :param name: Rank name
-        :return: RankInfoResult object containing:
-        - name (str)
-        - id (int)
-        - xml (str)
-        - currency (str)
-        - description (str)
-        - rankingMethod (int)
-        - type (Literal["Stock", "ETF"])
-        - groupUid (int)
-        - resolveGroupUid (int)
+        Retrieves the full configuration details for a given ranking system by its ID.
+
+        Args:
+            id: The unique identifier of the ranking system.
+
+        Returns:
+            A dictionary containing the ranking system's details.
+
+        Examples:
+            >>> client.rank_get(id=12345)
+            {
+                'name': 'My Ranking System',
+                'id': 12345,
+                'xml': '<RankingSystem>...</RankingSystem>',
+                'currency': 'USD',
+                'description': 'Ranking system description',
+                'rankingMethod': 1,
+                'type': 'Stock',
+                'groupUid': 100,
+                'resolveGroupUid': 200
+            }
         """
+        ...
+
+    @overload
+    def rank_get(self, *, name: str) -> RankInfoResult:
+        """
+        Gets information for a specific ranking system.
+
+        Retrieves the details for a given ranking system by name.
+
+        Args:
+            name: The name of the ranking system.
+
+        Returns:
+            A dictionary containing the ranking system's details.
+
+        Examples:
+            >>> client.rank_get(name='My Ranking System')
+            {
+                'name': 'My Ranking System',
+                'id': 12345,
+                'xml': '<RankingSystem>...</RankingSystem>',
+                'currency': 'USD',
+                'description': 'Ranking system description',
+                'rankingMethod': 1,
+                'type': 'Stock',
+                'groupUid': 100,
+                'resolveGroupUid': 200
+            }
+        """
+        ...
+
+    def rank_get(self, *, id: Optional[int] = None, name: Optional[str] = None) -> RankInfoResult:
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + RANK_PATH, params={"id": id, "name": name})
 
     def strategy(self, strategy_id: int):
@@ -528,27 +589,53 @@ class Client:
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id))
 
-    def strategy_copy(self, id: int, name: str, type: Optional[Literal["PTF", "SIM"]] = None) -> IdResult:
+    def strategy_copy(self, id: int, name: str, type: Literal["PTF", "SIM"]) -> IdResult:
         """
-        Strategy copy
+        Copy an existing strategy to a new strategy.
 
-        :param id: Strategy Id
-        :param name: name of the strategy copy
-        :param type: type of the strategy copy ("PTF"|"SIM")
-        :return: id
+        Copies a live or simulated strategy to a new live or simulated strategy. Copied live strategies are set to manual rebalance.
+
+        Args:
+            id: Existing strategy ID.
+            name: Name for the new strategy.
+            type: Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy.
+
+        Returns:
+            A dictionary containing the new strategy's details.
+
+        Examples:
+            >>> client.strategy_copy(123, 'Sim copy', 'SIM')
+            {
+                'id': 12345,
+                'cost': 1,
+                'quotaRemaining': 45678
+            }
         """
         return self._req_with_auth_fallback(
             method="POST", url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
         )
 
-    def book_copy(self, id: int, name: str, type: Optional[Literal["BOOK", "BOOKSIM"]] = None) -> IdResult:
+    def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"]) -> IdResult:
         """
-        Book copy
+        Copy an existing book to a new book.
 
-        :param book_id:
-        :param name: name of the book copy
-        :param type: type of the book copy ("BOOK"|"BOOKSIM")
-        :return: id
+        Copies a live or simulated book to a new live or simulated book. Copied live books are set to manual rebalance.
+
+        Args:
+            id: Existing book ID.
+            name: Name for the new book.
+            type: Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book.
+
+        Returns:
+            A dictionary containing the new book's details.
+
+        Examples:
+            >>> client.book_copy(123, 'Sim book copy', 'BOOKSIM')
+            {
+                'id': 12345,
+                'cost': 1,
+                'quotaRemaining': 45678
+            }
         """
         return self._req_with_auth_fallback(
             method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
@@ -863,18 +950,75 @@ class Client:
         return pandas.DataFrame(ret["prices"]) if to_pandas else ret
 
     @overload
-    def stock_factor_info(self, *, id: int) -> StockFactorInfoResult: ...
+    def stock_factor_info(self, *, id: int) -> StockFactorInfoResult:
+        """
+        Retrieve basic stock factor info by ID.
+
+        Args:
+            id: Stock factor ID.
+
+        Returns:
+            A dictionary containing the basic stock factor info.
+
+        Examples:
+            >>> client.stock_factor_info(id=123)
+            {
+                factorId: 123,
+                name: 'Stock factor name',
+                description: 'Stock factor description'
+            }
+        """
+        ...
+
+    @overload
+    def stock_factor_info(self, *, name: str) -> StockFactorInfoResult:
+        """
+        Retrieve basic stock factor info by name.
+
+        Args:
+            name: Stock factor name.
+
+        Returns:
+            A dictionary containing the basic stock factor info.
+
+        Examples:
+            >>> client.stock_factor_info(name='Stock factor name')
+            {
+                factorId: 123,
+                name: 'Stock factor name',
+                description: 'Stock factor description'
+            }
+        """
+        ...
+
     @overload
     @deprecated("use overload accepting `id` parameter instead")
-    def stock_factor_info(self, *, factor_id: int) -> StockFactorInfoResult: ...
-    @overload
-    def stock_factor_info(self, *, name: str) -> StockFactorInfoResult: ...
+    def stock_factor_info(self, *, factor_id: int) -> StockFactorInfoResult:
+        """
+        Retrieve basic stock factor info by ID.
+
+        Deprecated:
+            Use overload accepting `id` parameter instead.
+
+        Args:
+            factor_id: Stock factor ID.
+
+        Returns:
+            A dictionary containing the basic stock factor info.
+
+        Examples:
+            >>> client.stock_factor_info(factor_id=123)
+            {
+                factorId: 123,
+                name: 'Stock factor name',
+                description: 'Stock factor description'
+            }
+        """
+        ...
+
     def stock_factor_info(
         self, *, id: Optional[int] = None, factor_id: Optional[int] = None, name: Optional[str] = None
     ) -> StockFactorInfoResult:
-        """
-        Retrieves stock factor info, only accepts id or name.
-        """
         if id is not None:
             params = {"id": id}
         elif factor_id is not None:
@@ -884,30 +1028,95 @@ class Client:
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params)
 
     @overload
-    def data_series_info(self, *, id: int) -> DataSeriesInfoResult: ...
+    def data_series_info(self, *, id: int) -> DataSeriesInfoResult:
+        """
+        Retrieve basic data series info by ID.
+
+        Args:
+            id: Data series ID.
+
+        Returns:
+            A dictionary containing the basic data series info.
+
+        Examples:
+            >>> client.data_series_info(id=123)
+            {
+                dataSeriesId: 123,
+                name: 'Data series name',
+                description: 'Data series description'
+            }
+        """
+        ...
+
     @overload
-    def data_series_info(self, *, name: str) -> DataSeriesInfoResult: ...
+    def data_series_info(self, *, name: str) -> DataSeriesInfoResult:
+        """
+        Retrieve basic data series info by name.
+
+        Args:
+            name: Data series name.
+
+        Returns:
+            A dictionary containing the basic data series info.
+
+        Examples:
+            >>> client.data_series_info(name='Data series name')
+            {
+                dataSeriesId: 123,
+                name: 'Data series name',
+                description: 'Data series description'
+            }
+        """
+        ...
+
     def data_series_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> DataSeriesInfoResult:
-        """
-        Retrieves data series info, only accepts id or name.
-        """
         return self._req_with_auth_fallback(
             method="GET", url=self._endpoint + DATA_SERIES_INFO_PATH, params={"name": name} if id is None else {"id": id}
         )
 
     @overload
-    def strategy_info(self, *, id: int) -> StrategyInfoResult: ...
-    @overload
-    def strategy_info(self, *, name: str) -> StrategyInfoResult: ...
-    def strategy_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> StrategyInfoResult:
+    def strategy_info(self, *, id: int) -> StrategyInfoResult:
         """
-        Retrieves strategy info, only accepts id or name.
+        Retrieve basic strategy info by ID.
 
-        :param id: id of the strategy
-        :param name: name of the strategy
-        :return:
-        :rtype: :class:`StrategyInfoResult`
+        Args:
+            id: Strategy ID.
+
+        Returns:
+            A dictionary containing the basic strategy info.
+
+        Examples:
+            >>> client.strategy_info(id=123)
+            {
+                strategyId: 123,
+                name: 'Strategy name',
+                description: 'Strategy description'
+            }
         """
+        ...
+
+    @overload
+    def strategy_info(self, *, name: str) -> StrategyInfoResult:
+        """
+        Retrieve basic strategy info by name.
+
+        Args:
+            name: Strategy name.
+
+        Returns:
+            A dictionary containing the basic strategy info.
+
+        Examples:
+            >>> client.strategy_info(name='Strategy name')
+            {
+                strategyId: 123,
+                name: 'Strategy name',
+                description: 'Strategy description'
+            }
+        """
+        ...
+
+    def strategy_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> StrategyInfoResult:
         return self._req_with_auth_fallback(
             method="GET", url=self._endpoint + STRATEGY_INFO_PATH, params={"name": name} if id is None else {"id": id}
         )
