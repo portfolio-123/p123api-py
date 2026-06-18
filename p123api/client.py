@@ -787,38 +787,69 @@ class Client:
         self,
         factor_id: int,
         data: Union[str, IO[str]],
-        column_separator: Union[str, None] = None,
-        existing_data: Union[str, None] = None,
-        date_format: Union[str, None] = None,
-        decimal_separator: Union[str, None] = None,
-        ignore_errors: Union[bool, None] = None,
-        ignore_duplicates: Union[bool, None] = None,
+        column_separator: Literal[",", ";", "\t"] = ",",
+        existing_data: Literal["overwrite", "skip", "delete"] = "overwrite",
+        date_format="yyyy-mm-dd",
+        decimal_separator: Literal[".", ","] = ".",
+        ignore_errors=False,
+        ignore_duplicates=False,
     ):
         """
-        Stock factor data upload
-        :param factor_id:
-        :param data:
-        :param column_separator: comma, semicolon or tab
-        :param existing_data: overwrite, skip or delete
-        :param date_format: dd for day, mm for month and yyyy for year, any separator allowed (defaults to yyyy-mm-dd)
-        :param decimal_separator: . or ,
-        :param ignore_errors:
-        :param ignore_duplicates:
-        :return:
+        Upload stock factor data.
+
+        Uploads delimited content to the specified stock factor.
+
+        The uploaded content must contain a header row.
+        Only the first three columns are processed and must contain ``date``, ``<identifier>``, and ``value``.
+
+        ``<identifier>`` may be one of ``id`` (Portfolio123 stock ID), ``ticker`` (Portfolio123 ticker), ``gvkey``, ``cik``, or ``figi``.
+
+        The ``value`` column may specify ``na``, ``nan``, or ``null`` (case-insensitive) to clear a prior value on an observation date.
+
+        Example input::
+
+            date,ticker,value
+            2026-01-31,AAPL:USA,1.25
+            2026-01-31,MSFT:USA,0.83
+            2026-02-28,MSFT:USA,na
+
+        Note that some types of identifiers may resolve to multiple stocks.
+        For example, the FIGI ``BBG001SG1LP6`` resolves to both ``UMC:USA`` and ``UMCB:DEU``.
+
+        Identifier resolution is performed at the time of the upload. If identifier relationships ever change or coverage expands,
+        the stock factor data will still reflect the original resolution.
+
+        Args:
+            factor_id: Unique identifier of the stock factor.
+            data: Delimited content string or file-like containing delimited content. Must not exceed 100 MB or 5 million lines.
+            column_separator: Separator character between columns. Defaults to comma.
+            existing_data: Policy for dealing with collisions against stored (date, stock ID) pairs. Defaults to ``overwrite``.
+                - ``overwrite``: Overwrite stored values.
+                - ``skip``: Retaine stored values.
+                - ``delete``: Clear before storing uploaded data.
+            date_format: Date format. Defaults to ``yyyy-mm-dd``.
+            decimal_separator: Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
+            ignore_errors: If ``True``, lines in the data with errors will be silently discarded.
+            ignore_duplicates: If ``True``, additional occurrences of a (date, identifier) pair in the data are skipped.
         """
-        get_params = []
-        if column_separator is not None:
-            get_params.append(("columnSeparator", column_separator))
-        if existing_data is not None:
-            get_params.append(("existingData", existing_data))
-        if date_format is not None:
-            get_params.append(("dateFormat", date_format))
-        if decimal_separator is not None:
-            get_params.append(("decimalSeparator", decimal_separator))
-        if ignore_errors is not None:
-            get_params.append(("onError", "continue" if ignore_errors else "stop"))
-        if ignore_duplicates is not None:
-            get_params.append(("onDuplicates", "continue" if ignore_duplicates else "stop"))
+
+        # COMPAT: column_separator originally accepted 'comma', 'semicolon', 'tab' which matches the API.
+        actual_column_separator: str = column_separator
+        if column_separator == ",":
+            actual_column_separator = "comma"
+        elif column_separator == ";":
+            actual_column_separator = "semicolon"
+        elif column_separator == "\t":
+            actual_column_separator = "tab"
+
+        get_params = [
+            ("columnSeparator", actual_column_separator),
+            ("existingData", existing_data),
+            ("dateFormat", date_format),
+            ("decimalSeparator", decimal_separator),
+            ("onError", "continue" if ignore_errors else "stop"),
+            ("onDuplicates", "continue" if ignore_duplicates else "stop"),
+        ]
         return self._req_with_auth_fallback(
             url=self._endpoint + STOCK_FACTOR_UPLOAD_PATH.substitute(id=factor_id), params=get_params, data=data
         )
@@ -843,38 +874,50 @@ class Client:
         self,
         series_id: int,
         data: Union[str, IO[str]],
-        existing_data: Union[str, None] = None,
-        date_format: Union[str, None] = None,
-        decimal_separator: Union[str, None] = None,
-        ignore_errors: Union[bool, None] = None,
-        ignore_duplicates: Union[bool, None] = None,
-        contains_header_row: Union[bool, None] = None,
+        existing_data: Literal["overwrite", "skip", "delete"] = "overwrite",
+        date_format="yyyy-mm-dd",
+        decimal_separator: Literal[".", ","] = ".",
+        ignore_errors=False,
+        ignore_duplicates=False,
+        contains_header_row=True,
     ):
         """
-        Data series upload
-        :param series_id:
-        :param data:
-        :param existing_data: overwrite, skip or delete
-        :param date_format: dd for day, mm for month and yyyy for year, any separator allowed (defaults to yyyy-mm-dd)
-        :param decimal_separator: . or ,
-        :param ignore_errors:
-        :param ignore_duplicates:
-        :param contains_header_row:
-        :return:
+        Upload data series data.
+
+        Uploads delimited content to the specified data series.
+
+        The data must contain dates in the first column and values in the second column.
+        If the data includes a header row, the names are not processed.
+
+        The ``value`` column may specify ``na``, ``nan``, or ``null`` (case-insensitive) to clear a prior value on an observation date.
+
+        Example input::
+
+            date,value
+            2026-01-31,1.25
+            2026-02-28,na
+
+        Args:
+            series_id: Unique identifier of the data series.
+            data: Delimited content string or file-like containing delimited content. Must not exceed 100 MB.
+            existing_data: Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
+                - ``overwrite``: Overwrite stored values.
+                - ``skip``: Retaine stored values.
+                - ``delete``: Clear before storing uploaded data.
+            date_format: Date format. Defaults to ``yyyy-mm-dd``.
+            decimal_separator: Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
+            ignore_errors: If ``True``, lines in the data with errors will be silently discarded.
+            ignore_duplicates: If ``True``, additional occurrences of a date in the data are skipped.
+            contains_header_row: If ``True``, the first line of the uploaded data will be skipped.
         """
-        get_params = []
-        if existing_data is not None:
-            get_params.append(("existingData", existing_data))
-        if date_format is not None:
-            get_params.append(("dateFormat", date_format))
-        if decimal_separator is not None:
-            get_params.append(("decimalSeparator", decimal_separator))
-        if ignore_errors is not None:
-            get_params.append(("onError", "continue" if ignore_errors else "stop"))
-        if ignore_duplicates is not None:
-            get_params.append(("onDuplicates", "continue" if ignore_duplicates else "stop"))
-        if contains_header_row is not None:
-            get_params.append(("headerRow", contains_header_row))
+        get_params = [
+            ("existingData", existing_data),
+            ("dateFormat", date_format),
+            ("decimalSeparator", decimal_separator),
+            ("onError", "continue" if ignore_errors else "stop"),
+            ("onDuplicates", "continue" if ignore_duplicates else "stop"),
+            ("headerRow", contains_header_row),
+        ]
         return self._req_with_auth_fallback(
             url=self._endpoint + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id), params=get_params, data=data
         )
