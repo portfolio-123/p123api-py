@@ -1,44 +1,93 @@
-from enum import IntEnum
-from typing import Literal, Optional, TypedDict
+from enum import Enum, IntEnum
+import inspect
+import typing
+from typing import Literal, Optional
 
 
-class SharedResult(TypedDict):
-    cost: int
-    quotaRemaining: str
+def _create_fn(name, args, body, globals_dict=None):
+    """Executes a string of code to build a highly optimized function."""
+    args_str = ", ".join(args)
+    body_str = "\n        ".join(body)
+
+    txt = f"""
+def __builder__():
+    def {name}({args_str}):
+        {body_str}
+    return {name}
+"""
+    namespace = {}
+    exec(txt, globals_dict or {}, namespace)
+    return namespace["__builder__"]()
 
 
-class IdResult(SharedResult):
+def _slow_init(self, **kwargs):
+    cls = type(self)
+    annotations = typing.get_type_hints(cls)
+
+    globals_dict = {}
+    for hint in annotations.values():
+        if inspect.isclass(hint) and issubclass(hint, Enum):
+            globals_dict[hint.__name__] = hint
+
+    init_args = ["self"] + [f"{key}=None" for key in annotations.keys()] + ["**kwargs"]
+    init_body = []
+
+    for key, expected_type in annotations.items():
+        if inspect.isclass(expected_type) and issubclass(expected_type, Enum):
+            init_body.append(f"self.{key} = {expected_type.__name__}({key}) if {key} is not None else None")
+        else:
+            init_body.append(f"self.{key} = {key}")
+
+    cls.__init__ = _create_fn("__init__", init_args, init_body, globals_dict)
+    cls.__init__(self, **kwargs)
+
+
+def _slow_repr(self):
+    cls = type(self)
+    annotations = typing.get_type_hints(cls)
+
+    repr_args = ["self"]
+    repr_body = [
+        f"attrs = ', '.join(f'{{k}}={{getattr(self, k, None)!r}}' for k in {list(annotations.keys())})",
+        f"return f'{cls.__name__}({{attrs}})'",
+    ]
+    repr = cls.__repr__ = _create_fn("__repr__", repr_args, repr_body)
+    return repr(self)
+
+
+def api_result(cls):
+    cls.__init__ = _slow_init
+    cls.__repr__ = _slow_repr
+    return cls
+
+
+@api_result
+class IdResult:
     id: int
 
 
-class DataSeriesResult(SharedResult):
+@api_result
+class DataSeriesResult:
     dataSeriesId: int
 
 
-class DataSeriesInfoResult(DataSeriesResult):
+@api_result
+class DataSeriesInfoResult:
+    dataSeriesId: int
     name: str
     description: str
 
 
-class StockFactorResult(SharedResult):
+@api_result
+class StockFactorResult:
     factorId: int
 
 
-class StockFactorInfoResult(StockFactorResult):
+@api_result
+class StockFactorInfoResult:
+    factorId: int
     name: str
     description: str
-
-
-class RankInfoResult(SharedResult):
-    name: str
-    id: int
-    xml: str
-    currency: str
-    rankingMethod: int
-    type: Literal["Stock", "ETF"]
-    description: Optional[str]
-    groupUid: int
-    resolveGroupUid: int
 
 
 class RankingMethod(IntEnum):
@@ -47,7 +96,21 @@ class RankingMethod(IntEnum):
     NORMAL_DISTRIBUTION = 1
 
 
-class StrategyInfoResult(SharedResult):
+@api_result
+class RankInfoResult:
+    name: str
+    id: int
+    xml: str
+    currency: str
+    rankingMethod: RankingMethod
+    type: Literal["Stock", "ETF"]
+    description: Optional[str]
+    groupUid: int
+    resolveGroupUid: int
+
+
+@api_result
+class StrategyInfoResult:
     strategyId: int
     name: str
     description: str

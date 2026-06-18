@@ -6,7 +6,7 @@ from string import Template
 from typing import IO, Callable, List, Literal, Optional, Union, overload
 from typing_extensions import deprecated
 
-from .types import (
+from p123api.types import (
     DataSeriesInfoResult,
     DataSeriesResult,
     IdResult,
@@ -575,7 +575,7 @@ class Client:
         ...
 
     def rank_get(self, *, id: Optional[int] = None, name: Optional[str] = None) -> RankInfoResult:
-        return self._req_with_auth_fallback(method="GET", url=self._endpoint + RANK_PATH, params={"id": id, "name": name})
+        return RankInfoResult(**self._req_with_auth_fallback(method="GET", url=self._endpoint + RANK_PATH, params={"id": id, "name": name}))
 
     def strategy(self, strategy_id: int):
         """
@@ -608,8 +608,10 @@ class Client:
                 'quotaRemaining': 45678
             }
         """
-        return self._req_with_auth_fallback(
-            method="POST", url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
+        return IdResult(
+            **self._req_with_auth_fallback(
+                method="POST", url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
+            )
         )
 
     def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"]) -> IdResult:
@@ -634,8 +636,10 @@ class Client:
                 'quotaRemaining': 45678
             }
         """
-        return self._req_with_auth_fallback(
-            method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
+        return IdResult(
+            **self._req_with_auth_fallback(
+                method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
+            )
         )
 
     def strategy_transactions(self, strategy_id: int, start: str, end: str, to_pandas=False):
@@ -860,7 +864,7 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params)
+        return StockFactorResult(**self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params))
 
     def stock_factor_delete(self, factor_id: int):
         """
@@ -928,7 +932,7 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params)
+        return DataSeriesResult(**self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params))
 
     def data_series_delete(self, series_id: int):
         """
@@ -1065,7 +1069,9 @@ class Client:
             params = {"id": factor_id}
         else:
             params = {"name": name}
-        return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params)
+        return StockFactorInfoResult(
+            **self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params)
+        )
 
     @overload
     def data_series_info(self, *, id: int) -> DataSeriesInfoResult:
@@ -1110,8 +1116,10 @@ class Client:
         ...
 
     def data_series_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> DataSeriesInfoResult:
-        return self._req_with_auth_fallback(
-            method="GET", url=self._endpoint + DATA_SERIES_INFO_PATH, params={"name": name} if id is None else {"id": id}
+        return DataSeriesInfoResult(
+            **self._req_with_auth_fallback(
+                method="GET", url=self._endpoint + DATA_SERIES_INFO_PATH, params={"name": name} if id is None else {"id": id}
+            )
         )
 
     @overload
@@ -1157,8 +1165,10 @@ class Client:
         ...
 
     def strategy_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> StrategyInfoResult:
-        return self._req_with_auth_fallback(
-            method="GET", url=self._endpoint + STRATEGY_INFO_PATH, params={"name": name} if id is None else {"id": id}
+        return StrategyInfoResult(
+            **self._req_with_auth_fallback(
+                method="GET", url=self._endpoint + STRATEGY_INFO_PATH, params={"name": name} if id is None else {"id": id}
+            )
         )
 
 
