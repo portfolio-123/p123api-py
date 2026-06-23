@@ -1,7 +1,7 @@
 from enum import Enum, IntEnum
 import inspect
 import typing
-from typing import Literal, Optional
+from typing import Literal
 
 
 def _create_fn(name, args, body, globals_dict=None):
@@ -20,7 +20,7 @@ def __builder__():
     return namespace["__builder__"]()
 
 
-def _slow_init(self, **kwargs):
+def _slow_init(self, d: dict):
     cls = type(self)
     annotations = typing.get_type_hints(cls)
 
@@ -29,17 +29,17 @@ def _slow_init(self, **kwargs):
         if inspect.isclass(hint) and issubclass(hint, Enum):
             globals_dict[hint.__name__] = hint
 
-    init_args = ["self"] + [f"{key}=None" for key in annotations.keys()] + ["**kwargs"]
+    init_args = ["self", "d"]
     init_body = []
 
     for key, expected_type in annotations.items():
         if inspect.isclass(expected_type) and issubclass(expected_type, Enum):
-            init_body.append(f"self.{key} = {expected_type.__name__}({key}) if {key} is not None else None")
+            init_body.append(f"self.{key} = {expected_type.__name__}(v) if (v := d.get({key!r})) is not None else None")
         else:
-            init_body.append(f"self.{key} = {key}")
+            init_body.append(f"self.{key} = d.get({key!r})")
 
     init = cls.__init__ = _create_fn("__init__", init_args, init_body, globals_dict)
-    init(self, **kwargs)
+    init(self, d)
 
 
 def _slow_repr(self):
@@ -101,7 +101,7 @@ class RankInfoResult:
     currency: str
     rankingMethod: RankingMethod
     type: Literal["Stock", "ETF"]
-    description: Optional[str]
+    description: str | None
     groupUid: int
     resolveGroupUid: int
 

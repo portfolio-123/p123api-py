@@ -1,9 +1,10 @@
 from collections import defaultdict
+from collections.abc import Callable
 import requests
 import time
 import pandas
 from string import Template
-from typing import IO, Callable, List, Literal, Optional, Union, overload
+from typing import IO, Literal, overload
 from typing_extensions import deprecated
 
 from p123api.types import (
@@ -56,7 +57,7 @@ AIFACTOR_PREDICT_PATH = Template("/aiFactor/predict/$id")
 
 
 class ClientException(Exception):
-    def __init__(self, message, *, resp: Union[requests.Response, None] = None, exception: Union[Exception, None] = None):
+    def __init__(self, message, *, resp: requests.Response | None = None, exception: Exception | None = None):
         super().__init__(message)
         self._resp = resp
         self._exception = exception
@@ -158,7 +159,15 @@ class Client:
             raise ClientException(f"API authentication failed{message}", resp=resp)
 
     def _req_with_auth_fallback(
-        self, *, method: Literal["GET", "POST", "DELETE"] = "POST", url: str, json=None, params=None, data=None, headers=None
+        self,
+        *,
+        method: Literal["GET", "POST", "DELETE"] = "POST",
+        url: str,
+        json=None,
+        params=None,
+        data=None,
+        headers=None,
+        result_type=None,
     ):
         """
         Request with authentication fallback, used by all requests (except authentication)
@@ -187,7 +196,8 @@ class Client:
             ) as resp:
 
                 if resp.status_code == 200:
-                    return resp.json()
+                    json = resp.json()
+                    return result_type(json) if result_type is not None else json
 
                 if resp.status_code == 401 or resp.status_code == 403:
                     del self._session.headers["Authorization"]
@@ -574,8 +584,10 @@ class Client:
         """
         ...
 
-    def rank_get(self, *, id: Optional[int] = None, name: Optional[str] = None) -> RankInfoResult:
-        return RankInfoResult(**self._req_with_auth_fallback(method="GET", url=self._endpoint + RANK_PATH, params={"id": id, "name": name}))
+    def rank_get(self, *, id: int | None = None, name: str | None = None) -> RankInfoResult:
+        return self._req_with_auth_fallback(
+            method="GET", url=self._endpoint + RANK_PATH, params={"id": id, "name": name}, result_type=RankInfoResult
+        )
 
     def strategy(self, strategy_id: int):
         """
@@ -608,10 +620,11 @@ class Client:
                 'quotaRemaining': 45678
             }
         """
-        return IdResult(
-            **self._req_with_auth_fallback(
-                method="POST", url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
-            )
+        return self._req_with_auth_fallback(
+            method="POST",
+            url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id),
+            json={"name": name, "type": type},
+            result_type=IdResult,
         )
 
     def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"]) -> IdResult:
@@ -636,10 +649,8 @@ class Client:
                 'quotaRemaining': 45678
             }
         """
-        return IdResult(
-            **self._req_with_auth_fallback(
-                method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
-            )
+        return self._req_with_auth_fallback(
+            method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}, result_type=IdResult
         )
 
     def strategy_transactions(self, strategy_id: int, start: str, end: str, to_pandas=False):
@@ -659,7 +670,7 @@ class Client:
     def strategy_transaction_import(
         self,
         strategy_id: int,
-        data: Union[str, IO[str]],
+        data: str | IO[str],
         content_type: Literal["text/csv", "text/tsv"] = "text/csv",
         update_existing=False,
         make_rebal_dt_curr=False,
@@ -687,7 +698,7 @@ class Client:
             headers={"Content-Type": content_type},
         )
 
-    def strategy_transaction_delete(self, strategy_id: int, params: List[int]):
+    def strategy_transaction_delete(self, strategy_id: int, params: list[int]):
         """
         Strategy transaction delete
         :param strategy_id:
@@ -698,7 +709,7 @@ class Client:
             method="DELETE", url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id), json=params
         )
 
-    def strategy_holdings(self, strategy_id: int, date: Optional[str] = None, to_pandas=False):
+    def strategy_holdings(self, strategy_id: int, date: str | None = None, to_pandas=False):
         """
         Strategy holdings
         :param strategy_id:
@@ -790,7 +801,7 @@ class Client:
     def stock_factor_upload(
         self,
         factor_id: int,
-        data: Union[str, IO[str]],
+        data: str | IO[str],
         column_separator: Literal[",", ";", "\t"] = ",",
         existing_data: Literal["overwrite", "skip", "delete"] = "overwrite",
         date_format="yyyy-mm-dd",
@@ -864,7 +875,9 @@ class Client:
         :param params:
         :return:
         """
-        return StockFactorResult(**self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params))
+        return self._req_with_auth_fallback(
+            url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params, result_type=StockFactorResult
+        )
 
     def stock_factor_delete(self, factor_id: int):
         """
@@ -877,7 +890,7 @@ class Client:
     def data_series_upload(
         self,
         series_id: int,
-        data: Union[str, IO[str]],
+        data: str | IO[str],
         existing_data: Literal["overwrite", "skip", "delete"] = "overwrite",
         date_format="yyyy-mm-dd",
         decimal_separator: Literal[".", ","] = ".",
@@ -932,7 +945,7 @@ class Client:
         :param params:
         :return:
         """
-        return DataSeriesResult(**self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params))
+        return self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params, result_type=DataSeriesResult)
 
     def data_series_delete(self, series_id: int):
         """
@@ -983,7 +996,7 @@ class Client:
         """
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
-    def data_prices(self, identifier: Union[int, str], start: str, end: Optional[str], to_pandas=False):
+    def data_prices(self, identifier: int | str, start: str, end: str | None, to_pandas=False):
         """ """
         get_params = [("start", start)]
         if end is not None:
@@ -1060,17 +1073,15 @@ class Client:
         """
         ...
 
-    def stock_factor_info(
-        self, *, id: Optional[int] = None, factor_id: Optional[int] = None, name: Optional[str] = None
-    ) -> StockFactorInfoResult:
+    def stock_factor_info(self, *, id: int | None = None, factor_id: int | None = None, name: str | None = None) -> StockFactorInfoResult:
         if id is not None:
             params = {"id": id}
         elif factor_id is not None:
             params = {"id": factor_id}
         else:
             params = {"name": name}
-        return StockFactorInfoResult(
-            **self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params)
+        return self._req_with_auth_fallback(
+            method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params, result_type=StockFactorInfoResult
         )
 
     @overload
@@ -1115,11 +1126,12 @@ class Client:
         """
         ...
 
-    def data_series_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> DataSeriesInfoResult:
-        return DataSeriesInfoResult(
-            **self._req_with_auth_fallback(
-                method="GET", url=self._endpoint + DATA_SERIES_INFO_PATH, params={"name": name} if id is None else {"id": id}
-            )
+    def data_series_info(self, *, id: int | None = None, name: str | None = None) -> DataSeriesInfoResult:
+        return self._req_with_auth_fallback(
+            method="GET",
+            url=self._endpoint + DATA_SERIES_INFO_PATH,
+            params={"name": name} if id is None else {"id": id},
+            result_type=DataSeriesInfoResult,
         )
 
     @overload
@@ -1164,11 +1176,12 @@ class Client:
         """
         ...
 
-    def strategy_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> StrategyInfoResult:
-        return StrategyInfoResult(
-            **self._req_with_auth_fallback(
-                method="GET", url=self._endpoint + STRATEGY_INFO_PATH, params={"name": name} if id is None else {"id": id}
-            )
+    def strategy_info(self, *, id: int | None = None, name: str | None = None) -> StrategyInfoResult:
+        return self._req_with_auth_fallback(
+            method="GET",
+            url=self._endpoint + STRATEGY_INFO_PATH,
+            params={"name": name} if id is None else {"id": id},
+            result_type=StrategyInfoResult,
         )
 
 

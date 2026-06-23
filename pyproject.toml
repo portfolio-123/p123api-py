@@ -3,7 +3,7 @@ line-length = 140
 skip-magic-trailing-comma = true
 
 [tool.pyright]
-pythonVersion = "3.6"
+pythonVersion = "3.10"
 typeCheckingMode = "basic"
 deprecateTypingAliases = true
 disableBytesTypePromotions = true

@@ -14,6 +14,6 @@ setuptools.setup(
     url="https://github.com/portfolio-123/p123api-py",
     packages=setuptools.find_packages(),
     classifiers=["Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent"],
-    python_requires=">=3.6",
+    python_requires=">=3.10",
     install_requires=["pandas", "requests"],
 )
