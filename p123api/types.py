@@ -38,20 +38,17 @@ def _slow_init(self, **kwargs):
         else:
             init_body.append(f"self.{key} = {key}")
 
-    cls.__init__ = _create_fn("__init__", init_args, init_body, globals_dict)
-    cls.__init__(self, **kwargs)
+    init = cls.__init__ = _create_fn("__init__", init_args, init_body, globals_dict)
+    init(self, **kwargs)
 
 
 def _slow_repr(self):
     cls = type(self)
     annotations = typing.get_type_hints(cls)
 
-    repr_args = ["self"]
-    repr_body = [
-        f"attrs = ', '.join(f'{{k}}={{getattr(self, k, None)!r}}' for k in {list(annotations.keys())})",
-        f"return f'{cls.__name__}({{attrs}})'",
-    ]
-    repr = cls.__repr__ = _create_fn("__repr__", repr_args, repr_body)
+    repr = cls.__repr__ = _create_fn(
+        "__repr__", ["self"], [f"return f'{cls.__name__}({', '.join(f'{k}={{self.{k}!r}}' for k in annotations)})'"]
+    )
     return repr(self)
 
 
