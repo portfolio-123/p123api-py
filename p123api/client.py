@@ -1,10 +1,8 @@
-from collections import defaultdict
 from collections.abc import Callable
 import requests
 import time
-import pandas
 from string import Template
-from typing import IO, Literal, overload
+from typing import IO, Any, Literal, overload
 from typing_extensions import deprecated
 
 from p123api.types import (
@@ -57,16 +55,15 @@ AIFACTOR_PREDICT_PATH = Template("/aiFactor/predict/$id")
 
 
 class ClientException(Exception):
-    def __init__(self, message, *, resp: requests.Response | None = None, exception: Exception | None = None):
+    def __init__(self, message, *, resp: requests.Response | None = None):
         super().__init__(message)
         self._resp = resp
-        self._exception = exception
 
     def get_resp(self):
         return self._resp
 
     def get_cause(self):
-        return self._exception
+        return self.__cause__
 
     @staticmethod
     def build(message, resp: requests.Response):
@@ -85,19 +82,19 @@ class Client:
     class for interfacing with P123 API
     """
 
-    def __init__(self, *, api_id, api_key, auth_extra={}, endpoint=ENDPOINT, verify_requests=True):
+    def __init__(self, *, api_id: str | int, api_key: str, auth_extra={}, endpoint=ENDPOINT, verify_requests=True):
         self._endpoint = endpoint
         self._verify_requests = verify_requests
         self._max_req_retries = 5
         self._timeout = 300
         self._token = None
 
-        if not isinstance(api_id, str) or not api_id:
-            raise ClientException("api_id needs to be a non-empty str")
-        if not isinstance(api_key, str) or not api_key:
-            raise ClientException("api_key needs to be a non-empty str")
+        if not isinstance(api_id, (str, int)):
+            raise ClientException("api_id must be str or int")
+        if not isinstance(api_key, str):
+            raise ClientException("api_key must be str")
 
-        self._auth_params = {"apiId": api_id, "apiKey": api_key, **auth_extra}
+        self._auth_params = {"apiId": str(api_id), "apiKey": api_key, **auth_extra}
         self._session = requests.Session()
         self._method_map = {"GET": self._session.get, "POST": self._session.post, "DELETE": self._session.delete}
 
@@ -110,12 +107,12 @@ class Client:
     def close(self):
         self._session.close()
 
-    def set_max_request_retries(self, retries):
+    def set_max_request_retries(self, retries: int):
         if not isinstance(retries, int) or retries < 1 or retries > 10:
             raise ClientException("retries needs to be an int between 1 and 10")
         self._max_req_retries = retries
 
-    def set_timeout(self, timeout):
+    def set_timeout(self, timeout: int):
         if not isinstance(timeout, int) or timeout < 1:
             raise ClientException("timeout needs to be an int greater than 0")
         self._timeout = timeout
@@ -163,11 +160,11 @@ class Client:
         *,
         method: Literal["GET", "POST", "DELETE"] = "POST",
         url: str,
-        json=None,
-        params=None,
-        data=None,
-        headers=None,
-        result_type=None,
+        json: Any = None,
+        params: list[tuple[str, Any]] | None = None,
+        data: str | IO | None = None,
+        headers: dict[str, str] | None = None,
+        result_type: type | None = None,
     ):
         """
         Request with authentication fallback, used by all requests (except authentication)
@@ -222,6 +219,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             rows = ret["rows"]
             ret["average"][0] = "Average"
             rows.append(ret["average"])
@@ -243,6 +242,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_BACKTEST_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             columns = [
                 "",
                 "Total Return",
@@ -321,6 +322,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_RUN_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             ret = pandas.DataFrame(data=ret["rows"], columns=ret["columns"])
 
         return ret
@@ -351,6 +354,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             raw_obj = dict(ret)
             with_cusips = params.get("cusips") is not None
             with_name = params.get("includeNames")
@@ -387,28 +392,38 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_UNIVERSE_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             raw_obj = ret
-            names = params.get("names")
             f_indices = range(len(params["formulas"]))
+
+            names = params.get("names")
+            if names is None:
+                names = [f"formula{i + 1}" for i in f_indices]
+
             if params.get("asOfDt"):
                 for formula_idx in f_indices:
-                    name = names[formula_idx] if names is not None else f"formula{formula_idx + 1}"
+                    name = names[formula_idx]
                     ret[name] = ret["data"][formula_idx]
                 del ret["dt"], ret["cost"], ret["quotaRemaining"], ret["data"]
                 ret = pandas.DataFrame(ret)
             else:
+                includeNames = bool(params.get("includeNames"))
+                includeFigi = bool(params.get("figi"))
+
                 data = {"dates": [], "p123Uids": [], "tickers": []}
-                includeNames = False
-                if params.get("includeNames"):
+                if includeNames:
                     data["names"] = []
-                    includeNames = True
-                includeFigi = False
-                if params.get("figi"):
+                if includeFigi:
                     data["figi"] = []
-                    includeFigi = True
-                formulas = defaultdict(list)
+
+                date_data = [[] for _ in f_indices]
+
+                for formula_idx in f_indices:
+                    data[names[formula_idx]] = []
+
                 for dtObj in ret["dates"]:
-                    data["dates"].extend(dtObj["dt"] for _ in range(len(dtObj["p123Uids"])))
+                    data["dates"].extend([dtObj["dt"]] * len(dtObj["p123Uids"]))
                     data["p123Uids"].extend(dtObj["p123Uids"])
                     data["tickers"].extend(dtObj["tickers"])
                     if includeNames:
@@ -416,10 +431,7 @@ class Client:
                     if includeFigi:
                         data["figi"].extend(dtObj["figi"])
                     for formula_idx in f_indices:
-                        formulas[formula_idx].extend(dtObj["data"][formula_idx])
-                for formula_idx in f_indices:
-                    name = names[formula_idx] if names is not None else f"formula{formula_idx + 1}"
-                    data[name] = formulas[formula_idx]
+                        date_data[formula_idx].extend(dtObj["data"][formula_idx])
                 ret = pandas.DataFrame(data)
             ret.attrs["raw_obj"] = raw_obj
 
@@ -435,6 +447,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + RANK_RANKS_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             names = dict()
             raw_obj = dict(ret)
             del ret["cost"], ret["quotaRemaining"], ret["dt"]
@@ -586,7 +600,7 @@ class Client:
 
     def rank_get(self, *, id: int | None = None, name: str | None = None) -> RankInfoResult:
         return self._req_with_auth_fallback(
-            method="GET", url=self._endpoint + RANK_PATH, params={"id": id, "name": name}, result_type=RankInfoResult
+            method="GET", url=self._endpoint + RANK_PATH, params=[("id", id), ("name", name)], result_type=RankInfoResult
         )
 
     def strategy(self, strategy_id: int):
@@ -665,7 +679,13 @@ class Client:
         ret = self._req_with_auth_fallback(
             method="GET", url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id), params=[("start", start), ("end", end)]
         )
-        return pandas.DataFrame(ret["trans"]) if to_pandas else ret
+
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["trans"])
+
+        return ret
 
     def strategy_transaction_import(
         self,
@@ -723,7 +743,12 @@ class Client:
             method="GET", url=self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id), params=get_params
         )
 
-        return pandas.DataFrame(ret["holdings"]) if to_pandas else ret
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["holdings"])
+
+        return ret
 
     def strategy_trading_system(self, strategy_id: int):
         """
@@ -968,6 +993,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id), json=params)
 
         if to_pandas:
+            import pandas
+
             data = {"p123Uid": ret["p123Uids"], "ticker": ret["tickers"]}
             if "names" in ret:
                 data["name"] = ret["names"]
@@ -1004,7 +1031,13 @@ class Client:
         ret = self._req_with_auth_fallback(
             method="GET", url=self._endpoint + DATA_PRICES_PATH.substitute(identifier=identifier), params=get_params
         )
-        return pandas.DataFrame(ret["prices"]) if to_pandas else ret
+
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["prices"])
+
+        return ret
 
     @overload
     def stock_factor_info(self, *, id: int) -> StockFactorInfoResult:
@@ -1075,11 +1108,11 @@ class Client:
 
     def stock_factor_info(self, *, id: int | None = None, factor_id: int | None = None, name: str | None = None) -> StockFactorInfoResult:
         if id is not None:
-            params = {"id": id}
+            params = [("id", id)]
         elif factor_id is not None:
-            params = {"id": factor_id}
+            params = [("id", factor_id)]
         else:
-            params = {"name": name}
+            params = [("name", name)]
         return self._req_with_auth_fallback(
             method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params, result_type=StockFactorInfoResult
         )
@@ -1130,7 +1163,7 @@ class Client:
         return self._req_with_auth_fallback(
             method="GET",
             url=self._endpoint + DATA_SERIES_INFO_PATH,
-            params={"name": name} if id is None else {"id": id},
+            params=[("name", name)] if id is None else [("id", id)],
             result_type=DataSeriesInfoResult,
         )
 
@@ -1180,7 +1213,7 @@ class Client:
         return self._req_with_auth_fallback(
             method="GET",
             url=self._endpoint + STRATEGY_INFO_PATH,
-            params={"name": name} if id is None else {"id": id},
+            params=[("name", name)] if id is None else [("id", id)],
             result_type=StrategyInfoResult,
         )
 
@@ -1203,4 +1236,4 @@ def req_with_retry(req: Callable[..., requests.Response], max_tries=5, **kwargs)
         tries += 1
         if tries >= max_tries:
             break
-    raise ClientException("Cannot connect to API", exception=exception)
+    raise ClientException("Cannot connect to API") from exception
