@@ -167,14 +167,22 @@ class Client:
         result_type: type | None = None,
     ):
         """
-        Request with authentication fallback, used by all requests (except authentication)
-        :param method: request method
-        :param url: request url
-        :param json: request json
-        :param params: request params
-        :param data: request data
-        :param headers: request headers
-        :return: request response object
+        Request with authentication fallback, used by all requests (except authentication).
+
+        Args:
+            method: Request method.
+            url: Request URL.
+            json: Request JSON payload.
+            params: Request URL parameters.
+            data: Request data.
+            headers: Request headers.
+
+        Returns:
+            The response object from the request.
+
+        Examples:
+            >>> self._req_with_auth_fallback(method="POST", url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id), json={"name": name, "type": type})
+            <Response [200]>
         """
         reauth = False
         while True:
@@ -211,10 +219,55 @@ class Client:
 
     def screen_rolling_backtest(self, params: dict, to_pandas=False):
         """
-        Screen rolling backtest
-        :param params:
-        :param to_pandas:
-        :return:
+        Executes a screen rolling backtest.
+
+        Args:
+            params (dict): A dictionary of parameters for the rolling backtest. Key arguments include:
+                * screen (int or dict): Required. The screen ID or screen definition parameters.
+                * startDt (str): Required. Backtest start date (yyyy-mm-dd).
+                * endDt (str): Backtest end date (yyyy-mm-dd).
+                * frequency (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                  'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                  'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                * holdingPeriod (int): Holding period in days (1 to 730). Defaults to 182.
+                * pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
+                * transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average). Defaults to 1.
+                * slippage (float): Slippage percentage. Defaults to 0.25.
+                * longWeight (float): Long weight percentage. Defaults to 100.
+                * shortWeight (float): Short weight percentage. Defaults to 100.
+                * maxPosPct (float): Maximum position percentage (0 to 100).
+                   Limits the allocation to each position in the returned screen, working in conjunction with the maximum number of holdings. Defaults to 0.
+            to_pandas (bool): If True, converts the 'rows' and 'columns' of the result into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the backtest results, including columns, rows,
+            averages, up/down market metrics, and quota usage (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Prelim",
+            ...     "precision": 2,
+            ...     "screen": 1073741824,
+            ...     "transPrice": 1,
+            ...     "maxPosPct": 0,
+            ...     "slippage": 0.25,
+            ...     "longWeight": 100,
+            ...     "shortWeight": 100,
+            ...     "startDt": "2026-06-24",
+            ...     "endDt": "2026-06-24",
+            ...     "frequency": "Every Week",
+            ...     "holdingPeriod": 182
+            ... }
+            >>> client.screen_rolling_backtest(params, to_pandas=False)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'columns': ['string'],
+                'rows': [[{}]],
+                'average': [0.1],
+                'upMarkets': [0.1],
+                'downMarkets': [0.1]
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH, json=params)
 
@@ -234,10 +287,91 @@ class Client:
 
     def screen_backtest(self, params: dict, to_pandas=False):
         """
-        Screen backtest
-        :param params:
-        :param to_pandas:
-        :return:
+        Executes a screen backtest.
+
+        Args:
+            params (dict): A dictionary of parameters for the screen backtest. Key arguments include:
+                * screen (int or dict): Required. The screen ID or screen definition parameters.
+                * startDt (str): Required. Backtest start date (yyyy-mm-dd).
+                * endDt (str): Backtest end date (yyyy-mm-dd).
+                * rebalFreq (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                  'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                  'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                * riskStatsPeriod (str): Risk statistics period ('Monthly', 'Weekly', 'Daily'). Defaults to 'Monthly'.
+                * rankTolerance (float): Rank tolerance. Defaults to 0.
+                * carryCost (float): Carry cost percentage. Defaults to 1.5.
+                * pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
+                * transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average). Defaults to 1.
+                * slippage (float): Slippage percentage. Defaults to 0.25.
+                * longWeight (float): Long weight percentage. Defaults to 100.
+                * shortWeight (float): Short weight percentage. Defaults to 100.
+                * maxPosPct (float): Maximum position percentage (0 to 100).
+                   Limits the allocation to each position in the returned screen, working in conjunction with the maximum number of holdings. Defaults to 0.
+            to_pandas (bool): If True, converts the tabular components of the results into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the backtest results, which includes cost, quota usage,
+            performance stats (alpha, beta, Sharpe ratio, etc.), tabular results, and charting data.
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Prelim",
+            ...     "precision": 2,
+            ...     "screen": 1073741824,
+            ...     "transPrice": 1,
+            ...     "maxPosPct": 0,
+            ...     "slippage": 0.25,
+            ...     "longWeight": 100,
+            ...     "shortWeight": 100,
+            ...     "startDt": "2026-06-24",
+            ...     "endDt": "2026-06-24",
+            ...     "rankTolerance": 0,
+            ...     "carryCost": 1.5,
+            ...     "rebalFreq": "Every 4 Weeks",
+            ...     "riskStatsPeriod": "Monthly"
+            ... }
+            >>> client.screen_backtest(params, to_pandas=False)
+            {
+                "cost": 0.1,
+                "quotaRemaining": 0.1,
+                "stats": {
+                    "samples": 1073741824,
+                    "correlation": 0.1,
+                    "r_squared": 0.1,
+                    "beta": 0.1,
+                    "alpha": 0.1,
+                    "port": {
+                    "standard_dev": 0.1,
+                    "sharpe_ratio": 0.1,
+                    "sortino_ratio": 0.1,
+                    "total_return": 0.1,
+                    "annualized_return": 0.1,
+                    "max_drawdown": 0.1
+                    },
+                    "bench": {
+                    "standard_dev": 0.1,
+                    "sharpe_ratio": 0.1,
+                    "sortino_ratio": 0.1,
+                    "total_return": 0.1,
+                    "annualized_return": 0.1,
+                    "max_drawdown": 0.1
+                    }
+                },
+                "results": {
+                    "columns": ["string"],
+                    "rows": [[{}]],
+                    "average": [0.1],
+                    "upMarkets": [0.1],
+                    "downMarkets": [0.1],
+                },
+                "chart": {
+                    "dates": ["2026-06-24"],
+                    "screenReturns": [0.1],
+                    "benchReturns": [0.1],
+                    "turnoverPct": [0.1],
+                    "positionCnt": [0.1],
+                }
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_BACKTEST_PATH, json=params)
 
@@ -314,10 +448,36 @@ class Client:
 
     def screen_run(self, params: dict, to_pandas=False):
         """
-        Screen run
-        :param params:
-        :param to_pandas:
-        :return:
+        Executes a screen run.
+
+        Args:
+            params (dict): A dictionary of parameters for the screen run. Key arguments include:
+                * screen (int or dict): Required. The screen ID or screen definition parameters.
+                * pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Overrides for existing screens or sets for new screens (defaults to 'Complete').
+                * precision (int): Fixed precision digits (2 to 8). Defaults to 2.
+                * asOfDt (str): As of date (yyyy-mm-dd). Defaults to today.
+                * endDt (str): End date (yyyy-mm-dd).
+            to_pandas (bool): If True, converts the tabular components of the results into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the screen run results, typically including cost, quota
+            usage, columns, and rows (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Prelim",
+            ...     "precision": 2,
+            ...     "screen": 1073741824,
+            ...     "asOfDt": "2026-06-24",
+            ...     "endDt": "2026-06-24"
+            ... }
+            >>> client.screen_run(params, to_pandas=False)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'columns': ['string'],
+                'rows': [[{}]]
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_RUN_PATH, json=params)
 
@@ -330,26 +490,156 @@ class Client:
 
     def universe_update(self, params: dict):
         """
-        Universe update
-        :param params:
-        :return:
+        Updates a universe definition or executes a data universe update.
+
+        Args:
+            params (dict): A dictionary of parameters for the universe update. Key arguments include:
+                * universe (int or str): Required. The universe ID or name.
+                * formulas (list of str): Required. Array of formulas to evaluate.
+                * type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
+                * rules (list of str): Array of rules for the universe definition.
+                * startingUniverse (str): The base universe to start from.
+                * currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF'). Defaults to 'USD'.
+                * precision (int or None): Fixed precision digits (2 to 8). Pass None for no additional rounding.
+                * benchmark (str): Benchmark ticker.
+                * asOfDt (str): As of date (yyyy-mm-dd).
+                * asOfDts (list of str): Array of as of dates (yyyy-mm-dd).
+                * figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+                * preproc (dict): Preprocessor configuration dictionary, containing:
+                    - scaling (str): Required. Scaling method ('normal', 'rank', 'minmax').
+                    - naFill (bool): Set NAs to the middle values. Defaults to False.
+                    - scope (str): Preprocessor scope ('dataset', 'training', 'date'). Defaults to 'date'.
+                    - trimPct (float): Trim percentage. Defaults to 0.
+                    - outliers (bool): Clip outliers. Defaults to False.
+                    - outlierLimit (float): Used for normal scaling. Defaults to 0.
+                    - mlTrainingEnd (str): End date for scaling when scope='dataset'.
+                    - excludedFormulas (list of str): Formulas excluded (data license required for non-technical factors).
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "type": "Stock",
+            ...     "rules": [
+            ...         "string"
+            ...     ],
+            ...     "startingUniverse": "string",
+            ...     "currency": "USD"
+            ... }
+            >>> client.universe_update(params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
         return self._req_with_auth_fallback(url=self._endpoint + UNIVERSE_PATH, json=params)
 
     def rank_update(self, params: dict):
         """
-        Ranking system update
-        :param params:
-        :return:
+        Updates a ranking system.
+
+        Args:
+            params (dict): A dictionary of parameters for the ranking system update. Key arguments include:
+                * type (str): Required. Type of ranking system ('Stock' or 'ETF').
+                * nodes (str): Required. Nodes in XML format.
+                * id (int): The ID of the ranking system to update. Omit this to update the API ranking system.
+                * rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)). Defaults to 2.
+                * currency (str): Currency ('USD', 'CAD', 'EUR', 'GBP', 'CHF'). Defaults to 'USD'.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "id": 1073741824,
+            ...     "type": "Stock",
+            ...     "rankingMethod": 2,
+            ...     "nodes": "string",
+            ...     "currency": "USD"
+            ... }
+            >>> client.rank_update(params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PATH, json=params)
 
     def data(self, params: dict, to_pandas=False):
         """
-        Data
-        :param params:
-        :param to_pandas:
-        :return:
+        Retrieves time-series data for specified formulas and identifiers.
+
+        Args:
+            params (dict): A dictionary of parameters for the data request. Key arguments include:
+                * formulas (list of str): Required. Array of formulas to evaluate.
+                * startDt (str): Required. Start date (yyyy-mm-dd).
+                * endDt (str): End date (yyyy-mm-dd).
+                * p123Uids (list of int): Array of P123 UIDs (maximum 100).
+                * tickers (list of str): Array of tickers (maximum 100).
+                * gvkeys (list of str): Array of GVKeys (maximum 100).
+                * ciks (list of str): Array of CIKs (maximum 100).
+                * figis (list of str): Array of FIGIs (maximum 100).
+                * frequency (str): Retrieval frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                  'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                  'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every Week'.
+                * region (str): Region scope ('United States', 'Canada', 'North America', 'Europe',
+                  'North Atlantic'). Defaults to 'United States'.
+                * ignoreErrors (bool): If True, ignores invalid/ambiguous P123 UIDs, tickers, GVKeys,
+                  CIKs, or FIGIs instead of failing. Defaults to True.
+                * pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
+                * precision (int): Fixed precision digits.
+                * currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF'). Defaults to 'USD'.
+                * benchmark (str): Benchmark ticker.
+                * includeNames (bool): Whether to include company names/tickers in the output.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and the requested
+            data items grouped by identifier, containing their ticker and respective data series (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "precision": 2,
+            ...     "currency": "USD",
+            ...     "benchmark": "string",
+            ...     "formulas": ["string"],
+            ...     "includeNames": True,
+            ...     "p123Uids": [1073741824],
+            ...     "tickers": ["string"],
+            ...     "gvkeys": ["string"],
+            ...     "ciks": ["string"],
+            ...     "figis": ["string"],
+            ...     "startDt": "2026-06-24",
+            ...     "endDt": "2026-06-24",
+            ...     "frequency": "Every Week",
+            ...     "region": "United States",
+            ...     "ignoreErrors": True
+            ... }
+            >>> client.data(params)
+            {
+                'cost': 1,
+                'quotaRemaining': 1533,
+                'items': {
+                    '4737': {
+                        'ticker': 'IBM',
+                        'series': [
+                            [115457.36, 113310.56, '...'],
+                            [6777, 6777, '...'],
+                            '...'
+                        ]
+                    },
+                    '4773': {
+                        'ticker': 'INTC',
+                        'series': [
+                            [238180.8, 239253.3, '...'],
+                            [11356, 11356, '...'],
+                            '...'
+                        ]
+                    },
+                    '...': {}
+                }
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_PATH, json=params)
 
@@ -384,10 +674,66 @@ class Client:
 
     def data_universe(self, params: dict, to_pandas=False):
         """
-        Universe data
-        :param params:
-        :param to_pandas:
-        :return:
+        Retrieves universe data for specified formulas and parameters.
+
+        Args:
+            params (dict): A dictionary of parameters for the data request. Key arguments include:
+                * universe (int or str): Required. The universe ID or name (use 'ApiUniverse' for temporary ones).
+                * formulas (list of str): Required. Array of formulas to evaluate.
+                * type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
+                * currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF'). Defaults to 'USD'.
+                * benchmark (str): Benchmark ticker.
+                * precision (int or None): Fixed precision digits (2 to 8). Pass None for no additional rounding.
+                * asOfDt (str): As of date (yyyy-mm-dd).
+                * asOfDts (list of str): Array of as of dates (yyyy-mm-dd).
+                * figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+                * pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
+                * includeNames (bool): Whether to include company names in the output.
+                * preproc (dict): Preprocessor configuration dictionary, containing:
+                    - scaling (str): Required. Scaling method ('normal', 'rank', 'minmax').
+                    - naFill (bool): Set NAs to the middle values. Defaults to False.
+                    - scope (str): Preprocessor scope ('dataset', 'training', 'date'). Defaults to 'date'.
+                    - trimPct (float): Trim percentage. Defaults to 0.
+                    - outliers (bool): Clip outliers. Defaults to False.
+                    - outlierLimit (float): Used for normal scaling. Defaults to 0.
+                    - mlTrainingEnd (str): End date for scaling when scope='dataset'.
+                    - excludedFormulas (list of str): Formulas excluded (data license required for non-technical factors).
+            to_pandas (bool): If True, converts the data, tickers, and names arrays into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, date, and
+            parallel arrays of P123 UIDs, tickers, names, and the requested data
+            (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "formulas": [
+            ...         "string"
+            ...     ],
+            ...     "includeNames": True,
+            ...     "precision": 2,
+            ...     "currency": "USD",
+            ...     "benchmark": "string",
+            ...     "type": "ETF",
+            ...     "universe": 1073741824,
+            ...     "asOfDt": "2026-06-24",
+            ...     "asOfDts": [
+            ...         "2026-06-24"
+            ...     ],
+            ...     "figi": "Share Class"
+            ... }
+            >>> client.data_universe(params, to_pandas=False)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'dt': '2026-06-24',
+                'p123Uids': [1073741824],
+                'tickers': ['string'],
+                'names': ['string'],
+                'data': [[0.1]],
+                'figi': ['string']
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_UNIVERSE_PATH, json=params)
 
@@ -439,10 +785,72 @@ class Client:
 
     def rank_ranks(self, params: dict, to_pandas=False):
         """
-        Ranking system ranks
-        :param params:
-        :param to_pandas:
-        :return:
+        Retrieves ranking system ranks for a specific date.
+
+        Args:
+            params (dict): A dictionary of parameters for the ranks request. Key arguments include:
+                * rankingSystem (int or str): Required. The ranking system ID or name.
+                * asOfDt (str): Required. As of date (yyyy-mm-dd).
+                * pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to 'Complete'.
+                * precision (int): Fixed precision digits (2 to 8).
+                * universe (str): Universe name (use 'ApiUniverse' for temporary ones).
+                * rankingMethod (int): Ranking method (e.g., 2, 4, 1).
+                * tickers (str): Tickers to include.
+                * includeNames (bool): Include company names in the output. Defaults to False.
+                * includeNaCnt (bool): Include NA count. Defaults to False.
+                * includeFinalStmt (bool): Include final statement flag. Defaults to False.
+                * nodeDetails (str): Include node details ('composite' or 'factor'). Omit for no details.
+                * additionalData (list of str): Additional data formulas to evaluate (maximum 100).
+                * currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF').
+                * figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+            to_pandas (bool): If True, converts the resulting arrays into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, date, and parallel
+            arrays for UIDs, tickers, ranks, node details, and requested additional data
+            (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "precision": 2,
+            ...     "rankingSystem": 1073741824,
+            ...     "universe": "string",
+            ...     "rankingMethod": 2,
+            ...     "asOfDt": "2026-06-24",
+            ...     "tickers": "string",
+            ...     "includeNames": False,
+            ...     "includeNaCnt": False,
+            ...     "includeFinalStmt": False,
+            ...     "nodeDetails": "composite",
+            ...     "additionalData": [
+            ...         "string"
+            ...     ],
+            ...     "currency": "USD",
+            ...     "figi": "Share Class"
+            ... }
+            >>> client.rank_ranks(params, to_pandas=False)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'dt': '2026-06-24',
+                'p123Uids': [1073741824],
+                'tickers': ['string'],
+                'names': ['string'],
+                'naCnt': [1073741824],
+                'finalStmt': [True],
+                'ranks': [0.1],
+                'nodes': {
+                    'ids': [1073741824],
+                    'names': ['string'],
+                    'parents': [1073741824],
+                    'types': [1073741824],
+                    'weights': [0.1],
+                    'ranks': [[0.1]]
+                },
+                'additionalData': [[0.1]],
+                'figi': ['string']
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + RANK_RANKS_PATH, json=params)
 
@@ -482,16 +890,77 @@ class Client:
 
     def rank_perf(self, params: dict):
         """
-        Ranking system performance
-        :param params:
-        :return:
+        Evaluates the performance of a ranking system.
+
+        Args:
+            params (dict): A dictionary of parameters for the ranking system performance evaluation. Key arguments include:
+                * rankingSystem (int or str): Required. The ranking system ID or name.
+                * startDt (str): Required. Start date (yyyy-mm-dd).
+                * endDt (str): End date (yyyy-mm-dd).
+                * numBuckets (int): Number of rank buckets (2 to 200). Defaults to 20.
+                * maxNAs (float): Maximum number of NAs (9999 or unspecified to disable).
+                * minPrice (float): Minimum price. Defaults to 3.
+                * minLiquidity (float): Minimum liquidity (0 or unspecified to disable).
+                * maxReturn (float): Maximum return (0 or unspecified to disable).
+                * rebalFreq (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                  'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                  'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                * slippage (float): Slippage percentage applied when a stock changes bucket to make
+                  performance more realistic. Defaults to 0.
+                * transType (str): Transaction type ('long' or 'short'). Defaults to 'long'.
+                * benchmark (str): Benchmark ticker. Defaults to 'SPY'.
+                * outputType (str): Output type ('ann' for annualized returns, 'perf' for performance). Defaults to 'ann'.
+                * pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to 'Complete'.
+                * precision (int): Fixed precision digits.
+                * universe (str): Universe name.
+                * rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)).
+
+        Returns:
+            A dictionary containing the ranking system's performance results, including the
+            operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "precision": 2,
+            ...     "rankingSystem": 1073741824,
+            ...     "universe": "string",
+            ...     "rankingMethod": 2,
+            ...     "numBuckets": 20,
+            ...     "maxNAs": 100,
+            ...     "minPrice": 3,
+            ...     "minLiquidity": 5000,
+            ...     "maxReturn": 200,
+            ...     "rebalFreq": "Every 4 Weeks",
+            ...     "slippage": 0,
+            ...     "transType": "long",
+            ...     "benchmark": "SPY",
+            ...     "startDt": "2026-06-25",
+            ...     "endDt": "2026-06-25",
+            ...     "outputType": "ann"
+            ... }
+            >>> client.rank_perf(params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'results': [...]
+            }
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PERF_PATH, json=params)
 
     def rank_touch(self, rank_id: int):
         """
-        Rank touch
-        :param rank_id:
+        Touches a ranking system by its ID.
+
+        Args:
+            rank_id (int): Required. The ID of the ranking system to touch.
+
+        Returns:
+            A string confirming the touch operation.
+
+        Examples:
+            >>> client.rank_touch(107374)
+            'string'
         """
         self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id))
 
@@ -605,9 +1074,122 @@ class Client:
 
     def strategy(self, strategy_id: int):
         """
-        Strategy details
-        :param strategy_id:
-        :return:
+        Retrieves details for a specific strategy or book.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+
+        Returns:
+            A dictionary containing the strategy's details, including summary information,
+            extensive performance and trading statistics, risk measurements, and daily
+            performance data.
+
+        Examples:
+            >>> client.strategy(1073741824)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'summary': {
+                    'generalInfo': {
+                        'name': 'string',
+                        'mktVal': 0.1,
+                        'cash': 0.1,
+                        'noPos': 1073741824,
+                        'noAssets': 1073741824,
+                        'lastTrades': 1073741824,
+                        'lastTraded': '2026-06-25',
+                        'start': '2026-06-25',
+                        'end': '2026-06-25',
+                        'sizingMethod': 'string',
+                        'reconPeriod': 'string',
+                        'lastRecon': '2026-06-25',
+                        'nextRecon': '2026-06-25',
+                        'reconText': 'string',
+                        'rebalPeriod': 'string',
+                        'rebalMode': 'string',
+                        'lastRebal': '2026-06-25',
+                        'nextRebal': '2026-06-25',
+                        'rebalText': 'string',
+                        'benchmarkId': 1073741824,
+                        'benchmark': 'string',
+                        'universe': 'string',
+                        'rankingSystemId': 1073741824,
+                        'rankingSystem': 'string'
+                    },
+                    'quickStats': {
+                        'totalReturn': 0.1,
+                        'benchReturn': 0.1,
+                        'activeReturn': 0.1,
+                        'annualizedReturn': 0.1,
+                        'annualTurnover': 0.1,
+                        'maxDrawdown': 0.1,
+                        'benchMaxDrawdown': 0.1,
+                        'overallWinners': 1073741824,
+                        'overallWinnersPct': 0.1,
+                        'sharpeRatio': 0.1,
+                        'benchCorrel': 0.1
+                    }
+                },
+                'stats': {
+                    'perf': {
+                        'returnPct': {
+                            'total': {'model': 0.1, 'bench': 0.1},
+                            'annualized': {'model': 0.1, 'bench': 0.1},
+                            'yearToDate': {'model': 0.1, 'bench': 0.1},
+                            'monthToDate': {'model': 0.1, 'bench': 0.1},
+                            'period4Week': {'model': 0.1, 'bench': 0.1},
+                            'period13Week': {'model': 0.1, 'bench': 0.1},
+                            'period1Year': {'model': 0.1, 'bench': 0.1},
+                            'period3Year': {'model': 0.1, 'bench': 0.1}
+                        },
+                        'monthly': {'period': ['string'], 'model': [0.1], 'bench': [0.1]},
+                        'yearly': {'period': ['string'], 'model': [0.1], 'bench': [0.1]},
+                        'weekly': {'period': ['string'], 'model': [0.1], 'bench': [0.1]}
+                    },
+                    'trading': {
+                        'parameters': {
+                            'startingCapital': 0.1,
+                            'totalCashAdded': 0.1,
+                            'endingMarketValue': 0.1,
+                            'startDate': '2026-06-25',
+                            'endDate': '2026-06-25',
+                            'daysSinceInception': 1073741824
+                        },
+                        'summary': {
+                            'totalBuyShortTrades': 1073741824,
+                            'totalSellCoverTrades': 1073741824,
+                            'averageAnnualTurnover': 0.1,
+                            'totalTradingCost': 0.1,
+                            'realizedWinners': 0.1,
+                            'unrealizedWinners': 0.1,
+                            'overallWinners': 0.1
+                        },
+                        'realized': { ... },
+                        'unrealized': { ... }
+                    },
+                    'riskMeasurements': {
+                        'daily': { ... },
+                        'weekly': { ... },
+                        'monthly': { ... },
+                        'yearly': { ... }
+                    }
+                },
+                'dailyPerf': {
+                    'date': ['2026-06-25'],
+                    'cash': [0.1],
+                    'mktValLong': [0.1],
+                    'mktValShort': [0.1],
+                    'mktValHedge': [0.1],
+                    'cashAdded': [0.1],
+                    'totalEquity': [0.1],
+                    'accruedDiv': [0.1],
+                    'leverageRatio': [0.1],
+                    'posCnt': [1073741824],
+                    'bench': [0.1],
+                    'ret': [0.1],
+                    'retBench': [0.1]
+                }
+            }
         """
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id))
@@ -669,11 +1251,44 @@ class Client:
 
     def strategy_transactions(self, strategy_id: int, start: str, end: str, to_pandas=False):
         """
-        Strategy transactions
-        :param strategy_id:
-        :param start: start date in YYYY-MM-DD format
-        :param end: end date in YYYY-MM-DD format
-        :return:
+        Retrieves transactions for a specific strategy or book within a date range.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            start (str): Required. Start date (yyyy-mm-dd).
+            end (str): Required. End date (yyyy-mm-dd).
+            to_pandas (bool): If True, converts the transaction results into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and a list of
+            transaction details (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> client.strategy_transactions(1073741824, "2026-06-25", "2026-06-25", to_pandas=False)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'trans': [
+                    {
+                        'tranDt': '2026-06-25',
+                        'transId': 1073741824,
+                        'orderUid': 1073741824,
+                        'notes': 'string',
+                        'type': 'BUY',
+                        'shares': 0.1,
+                        'p123Uid': 1073741824,
+                        'ticker': 'string',
+                        'amount': 0.1,
+                        'settleDt': '2026-06-25',
+                        'price': 0.1,
+                        'commission': 0.1,
+                        'slippage': 0.1,
+                        'rank': 0.1,
+                        'orderTypeUid': 1073741824,
+                        'limitPrice': 0.1
+                    }
+                ]
+            }
         """
 
         ret = self._req_with_auth_fallback(
@@ -696,12 +1311,39 @@ class Client:
         make_rebal_dt_curr=False,
     ):
         """
-        Strategy transaction import
-        :param strategy_id:
-        :param file:
-        :param update_existing: update existing transactions
-        :param make_rebal_dt_curr: if True, the rebalancing date will be set to the current date
-        :return:
+        Imports transactions into a strategy.
+
+        Supported formats are CSV and TSV. Expected columns (in order) are: date, ticker, type,
+        shares, price, commission, and notes. Valid transaction types are BUY, SELL, COVER, SHORT,
+        DIV, SPLIT, and CASH. The Preferred Country setting will be used to resolve tickers that
+        do not have a country suffix. Dividends and splits are handled automatically unless
+        overridden. Prices and commissions are assumed to be in the strategy's currency.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            data (str or IO[str]): Required. The transaction data as a string or file-like object.
+            content_type (str): The format of the data ('text/csv' or 'text/tsv'). Defaults to 'text/csv'.
+            update_existing (bool): If True, updates existing transactions. Defaults to False.
+            make_rebal_dt_curr (bool): If True, sets the rebalancing date to the current date. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and the number
+            of processed transactions.
+
+        Examples:
+            >>> csv_data = "04/28/2025,IBM,BUY,100,123.45,10.0\\n04/25/2025,,CASH,,,123.45"
+            >>> client.strategy_transaction_import(
+            ...     strategy_id=1073741824,
+            ...     data=csv_data,
+            ...     content_type="text/csv",
+            ...     update_existing=False,
+            ...     make_rebal_dt_curr=False
+            ... )
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'processedTransactions': 1073741824
+            }
         """
 
         get_params = []
@@ -720,10 +1362,21 @@ class Client:
 
     def strategy_transaction_delete(self, strategy_id: int, params: list[int]):
         """
-        Strategy transaction delete
-        :param strategy_id:
-        :param trans_ids:
-        :return:
+        Deletes specific transactions from a strategy by their transaction IDs.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (list of int): Required. A list of transaction IDs to delete.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> client.strategy_transaction_delete(10737, [1073741824])
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
         return self._req_with_auth_fallback(
             method="DELETE", url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id), json=params
@@ -731,10 +1384,40 @@ class Client:
 
     def strategy_holdings(self, strategy_id: int, date: str | None = None, to_pandas=False):
         """
-        Strategy holdings
-        :param strategy_id:
-        :param date: date in YYYY-MM-DD format, if None, current date is used
-        :return:
+        Retrieves the historical holdings for a specific strategy as of a given date.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            date (str, optional): The date to retrieve holdings for (yyyy-mm-dd). If None, defaults to the current date.
+            to_pandas (bool): If True, converts the holdings list into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and a list of
+            holdings details (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> client.strategy_holdings(1073741824, "2026-06-25", to_pandas=False)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'holdings': [
+                    {
+                        'ticker': 'string',
+                        'name': 'string',
+                        'mktUid': 1073741824,
+                        'retPct': 0.1,
+                        'shares': 0.1,
+                        'avgShareCost': 0.1,
+                        'cost': 0.1,
+                        'currPrice': 0.1,
+                        'value': 0.1,
+                        'daysHeld': 1073741824,
+                        'weight': 0.1,
+                        'sector': 'string',
+                        'rank': 0.1
+                    }
+                ]
+            }
         """
 
         get_params = [("date", date)] if date is not None else []
@@ -752,59 +1435,326 @@ class Client:
 
     def strategy_trading_system(self, strategy_id: int):
         """
-        Strategy trading system
-        :param strategy_id:
-        :return:
+        Retrieves the trading system configuration for a specific strategy or book.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and the
+            trading system configuration details (such as capital, universe, ranking,
+            rules, and rebalance settings).
+
+        Examples:
+            >>> client.strategy_trading_system(1073741824)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'tradingSystem': {
+                    'startingCapital': 0.1,
+                    'useMargin': True,
+                    'universeUid': 1073741824,
+                    'universe': 'string',
+                    'rankingSystemUid': 1073741824,
+                    'rankingSystem': 'string',
+                    'rankingMethod': 0,
+                    'buyRules': [
+                        {
+                            'name': 'string',
+                            'formula': 'string',
+                            'disabled': True
+                        }
+                    ],
+                    'sellRules': [
+                        {
+                            'name': 'string',
+                            'formula': 'string',
+                            'disabled': True
+                        }
+                    ],
+                    'rebalance': {
+                        'sizingMethod': 'STATIC',
+                        'posWeight': 0.1,
+                        'numPos': 1073741824,
+                        'rebalFreq': 'Every Week',
+                        'reconFreq': 'Every Week'
+                    }
+                }
+            }
         """
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id))
 
     def strategy_trading_system_update(self, strategy_id: int, params: dict):
         """
-        Live strategy trading system update
-        :param strategy_id:
-        :param params:
-        :return:
+        Updates the trading system configuration for a live strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict): A dictionary of parameters for the trading system update. Key arguments include:
+                * useMargin (bool): Whether to use margin.
+                * universe (int or str): Universe name or ID.
+                * rankingSystem (int or str): Ranking system name or ID.
+                * rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
+                * buyRules (list of dict): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                * sellRules (list of dict): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                * rebalance (dict): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
+                    - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
+                    - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
+                    - Frequency allowed values: 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                      'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "useMargin": True,
+            ...     "universe": 1073741824,
+            ...     "rankingSystem": 1073741824,
+            ...     "rankingMethod": 0,
+            ...     "buyRules": [
+            ...         {
+            ...             "name": "string",
+            ...             "formula": "string",
+            ...             "disabled": True
+            ...         }
+            ...     ],
+            ...     "sellRules": [
+            ...         {
+            ...             "name": "string",
+            ...             "formula": "string",
+            ...             "disabled": True
+            ...         }
+            ...     ],
+            ...     "rebalance": {
+            ...         "sizingMethod": "DYNAMIC",
+            ...         "numPos": 1073741824,
+            ...         "rebalFreq": "Every Week",
+            ...         "reconFreq": "Every Week"
+            ...     }
+            ... }
+            >>> client.strategy_trading_system_update(1073741824, params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
 
     def book_trading_system_update(self, strategy_id: int, params: dict):
         """
-        Live book trading system update
-        :param strategy_id:
-        :param params:
-        :return:
+        Updates the trading system configuration for a live strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict): A dictionary of parameters for the trading system update. Key arguments include:
+                * useMargin (bool): Whether to use margin.
+                * universe (int or str): Universe name or ID.
+                * rankingSystem (int or str): Ranking system name or ID.
+                * rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
+                * buyRules (list of dict): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                * sellRules (list of dict): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                * rebalance (dict): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
+                    - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
+                    - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
+                    - Frequency allowed values: 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                      'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "useMargin": True,
+            ...     "universe": 1073741824,
+            ...     "rankingSystem": 1073741824,
+            ...     "rankingMethod": 0,
+            ...     "buyRules": [
+            ...         {
+            ...             "name": "string",
+            ...             "formula": "string",
+            ...             "disabled": True
+            ...         }
+            ...     ],
+            ...     "sellRules": [
+            ...         {
+            ...             "name": "string",
+            ...             "formula": "string",
+            ...             "disabled": True
+            ...         }
+            ...     ],
+            ...     "rebalance": {
+            ...         "sizingMethod": "DYNAMIC",
+            ...         "numPos": 1073741824,
+            ...         "rebalFreq": "Every Week",
+            ...         "reconFreq": "Every Week"
+            ...     }
+            ... }
+            >>> client.strategy_trading_system_update(1073741824, params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
 
     def strategy_rerun(self, strategy_id: int, params: dict):
         """
-        Simulated strategy rerun
-        :param strategy_id:
-        :param params:
-        :return:
+        Reruns a simulated strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict): A dictionary of parameters for the simulation rerun. Key arguments include:
+                * startDt (str): Required. Simulation start date (yyyy-mm-dd).
+                * endDt (str): Required. Simulation end date (yyyy-mm-dd).
+                * saveTrans (bool): Whether to save transactions.
+                * useMargin (bool): Whether to use margin.
+                * universe (int or str): Universe name or ID.
+                * rankingSystem (int or str): Ranking system name or ID.
+                * rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
+                * buyRules (list of dict): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                * sellRules (list of dict): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                * rebalance (dict): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
+                    - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
+                    - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
+                    - Frequency allowed values: 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                      'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "useMargin": True,
+            ...     "universe": 1073741824,
+            ...     "rankingSystem": 1073741824,
+            ...     "rankingMethod": 0,
+            ...     "buyRules": [
+            ...         {
+            ...             "name": "string",
+            ...             "formula": "string",
+            ...             "disabled": True
+            ...         }
+            ...     ],
+            ...     "sellRules": [
+            ...         {
+            ...             "name": "string",
+            ...             "formula": "string",
+            ...             "disabled": True
+            ...         }
+            ...     ],
+            ...     "rebalance": {
+            ...         "sizingMethod": "DYNAMIC",
+            ...         "numPos": 1073741824,
+            ...         "rebalFreq": "Every Week",
+            ...         "reconFreq": "Every Week"
+            ...     },
+            ...     "startDt": "2026-06-25",
+            ...     "endDt": "2026-06-25",
+            ...     "saveTrans": True
+            ... }
+            >>> client.strategy_rerun(107374, params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + SIM_RERUN_PATH.substitute(id=strategy_id), json=params)
 
     def book_rerun(self, strategy_id: int, params: dict):
         """
-        Simulated book rerun
-        :param strategy_id:
-        :param params:
-        :return:
+        Reruns a simulated book.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict): A dictionary of parameters for the book simulation rerun. Key arguments include:
+                * startDt (str): Required. Simulation start date (yyyy-mm-dd).
+                * endDt (str): Required. Simulation end date (yyyy-mm-dd).
+                * assets (list of dict): A list of assets included in the book. Each asset requires:
+                    - itemUid (int): The unique identifier for the item.
+                    - type (str): The asset type ('PTF' for live strategy, 'DM' for designer model,
+                      'PRC' for stock or ETF, 'SIM' for simulated strategy).
+                    - relativeWeight (float): The relative weight of the asset in the book.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "assets": [
+            ...         {
+            ...             "itemUid": 1073741824,
+            ...             "type": "PTF",
+            ...             "relativeWeight": 0.1
+            ...         }
+            ...     ],
+            ...     "startDt": "2026-06-25",
+            ...     "endDt": "2026-06-25"
+            ... }
+            >>> client.book_rerun(1073741824, params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + BOOK_SIM_RERUN_PATH.substitute(id=strategy_id), json=params)
 
     def strategy_rebalance(self, strategy_id: int, params: dict):
         """
-        Strategy rebalance
-        :param strategy_id:
-        :param params:
-        :return:
+        Retrieves rebalance recommendations for a strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict): A dictionary of parameters for the rebalance request. Key arguments include:
+                * pitMethod (str): Point-in-Time method override ('Prelim' or 'Complete').
+                * op (str): Rebalance operation for Dynamic Weight Live Strategies ('Rebal', 'Recon', or 'ReconRebal'). Assigned automatically by default based on the strategy's nextRebal and nextRecon dates.
+                * reject (list of int): A list of P123 UIDs for which to suppress rebalance recommendations.
+                * figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+                * minRebalTran (float): Override for the Minimum Rebalance Transaction (applicable for Live Book rebalances only).
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, the specific
+            operation executed, asset ranks, and a list of rebalance recommendations
+            detailing actions, shares, prices, and related metrics.
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Prelim",
+            ...     "op": "Rebal",
+            ...     "reject": [
+            ...         1073741824
+            ...     ],
+            ...     "figi": "Share Class",
+            ...     "minRebalTran": 0.1
+            ... }
+            >>> client.strategy_rebalance(1073741824, params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'op': 'Rebal',
+                'ranks': [
+                    [4737, 99.5],
+                    [774, 99.3]
+                ],
+                'recs': [
+                    {
+                        'ticker': 'string',
+                        'p123Uid': 0,
+                        'action': 'string',
+                        'price': 0.1,
+                        'shares': 0.1,
+                        'comm': 0.1,
+                        'slip': 0.1,
+                        'note': 'string',
+                        'figi': 'string'
+                    }
+                ]
+            }
         """
 
         ret = self._req_with_auth_fallback(url=self._endpoint + STRATEGY_REBALANCE_PATH.substitute(id=strategy_id), json=params)
@@ -813,10 +1763,46 @@ class Client:
 
     def strategy_rebalance_commit(self, strategy_id: int, params: dict):
         """
-        Strategy rebalance commit
-        :param strategy_id:
-        :param params:
-        :return:
+        Commits rebalance transactions for a strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict): A dictionary of parameters for the rebalance commit. Key arguments include:
+                * trans (list of dict): Required. A list of rebalance transactions to commit. Each
+                  transaction dictionary must contain 'p123Uid' (int), 'action' ('BUY', 'COVER',
+                  'SELL', or 'SHORT'), 'price' (float), and 'shares' (float). Optional keys include
+                  'comm' (float), 'slip' (float), and 'note' (str).
+                * op (str): Rebalance operation for Dynamic Weight Live Strategies ('Rebal', 'Recon', or 'ReconRebal').
+                * ranks (list of list): Ranks included with the rebalance recommendations request
+                  (e.g., [[4737, 99.5], [774, 99.3]]). Required for Live Strategy rebalances.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "op": "Rebal",
+            ...     "ranks": [
+            ...         [4737, 99.5],
+            ...         [774, 99.3]
+            ...     ],
+            ...     "trans": [
+            ...         {
+            ...             "p123Uid": 1073741824,
+            ...             "action": "BUY",
+            ...             "price": 0.1,
+            ...             "shares": 0.1,
+            ...             "comm": 0.1,
+            ...             "slip": 0.1,
+            ...             "note": "string"
+            ...         }
+            ...     ]
+            ... }
+            >>> client.strategy_rebalance_commit(1073741824, params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
 
         ret = self._req_with_auth_fallback(url=self._endpoint + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id), json=params)
@@ -896,9 +1882,29 @@ class Client:
 
     def stock_factor_create_update(self, params: dict) -> StockFactorResult:
         """
-        Stock factor create/update
-        :param params:
-        :return:
+        Creates a new stock factor or updates an existing one.
+
+        Args:
+            params (dict): A dictionary of parameters for the stock factor. Key arguments include:
+                * name (str): Required. Name of the stock factor.
+                * id (int): The ID of the stock factor to update. Omit this to create a new stock factor.
+                * description (str): Description of the stock factor.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and the factor ID.
+
+        Examples:
+            >>> params = {
+            ...     "id": 1073741824,
+            ...     "name": "string",
+            ...     "description": "string"
+            ... }
+            >>> client.stock_factor_create_update(params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'factorId': 1073741824
+            }
         """
         return self._req_with_auth_fallback(
             url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params, result_type=StockFactorResult
@@ -906,10 +1912,22 @@ class Client:
 
     def stock_factor_delete(self, factor_id: int):
         """
-        Stock factor delete
-        :param factor_id: id of the data stock factor to delete
-        :return:
+        Deletes a specific stock factor by its ID.
+
+        Args:
+            factor_id (int): Required. The ID of the stock factor to delete.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> client.stock_factor_delete(1073741824)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
+
         return self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_DELETE_PATH.substitute(id=factor_id), method="DELETE")
 
     def data_series_upload(
@@ -966,17 +1984,48 @@ class Client:
 
     def data_series_create_update(self, params: dict) -> DataSeriesResult:
         """
-        Data series create/update
-        :param params:
-        :return:
+        Creates a new data series or updates an existing one.
+
+        Args:
+            params (dict): A dictionary of parameters for the data series. Key arguments include:
+                * name (str): Required. Name of the data series.
+                * id (int): The ID of the data series to update. Omit this to create a new data series.
+                * description (str): Description of the data series.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and the data series ID.
+
+        Examples:
+            >>> params = {
+            ...     "id": 1073741824,
+            ...     "name": "string",
+            ...     "description": "string"
+            ... }
+            >>> client.data_series_create_update(params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'dataSeriesId': 1073741824
+            }
         """
         return self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params, result_type=DataSeriesResult)
 
     def data_series_delete(self, series_id: int):
         """
-        Data series delete
-        :param series_id: id of the data series to delete
-        :return:
+        Deletes a specific data series by its ID.
+
+        Args:
+            series_id (int): Required. The ID of the data series to delete.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> client.data_series_delete(1073741824)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
         return self._req_with_auth_fallback(method="DELETE", url=self._endpoint + DATA_SERIES_DELETE_PATH.substitute(id=series_id))
 
@@ -985,10 +2034,41 @@ class Client:
 
     def aifactor_predict(self, predictor_id: int, params={}, to_pandas=False):
         """
-        AI Factor predict
-        :param predictor_id:
-        :param params:
-        :return:
+        Retrieves predictions for a trained AI Factor predictor.
+
+        Args:
+            predictor_id (int): Required. The ID of the trained predictor.
+            params (dict, optional): A dictionary of parameters for the prediction request. Key arguments include:
+                * precision (int): Fixed precision digits (2 to 6) for predictions. Defaults to 2.
+                * universe (int or str): Universe name or ID (use 'ApiUniverse' for temporary ones).
+                * asOfDt (str): As of date (yyyy-mm-dd).
+                * includeNames (bool): Whether to include company names in the output.
+                * includeFeatures (bool): Whether to include features in the output.
+                * figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+            to_pandas (bool): If True, converts the resulting arrays into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, date, and parallel
+            arrays for P123 UIDs, tickers, and predictions (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "precision": 2,
+            ...     "universe": 1073741824,
+            ...     "asOfDt": "2026-06-25",
+            ...     "includeNames": True,
+            ...     "includeFeatures": True,
+            ...     "figi": "Share Class"
+            ... }
+            >>> client.aifactor_predict(1073741824, params, to_pandas=False)
+            {
+                'cost': 1,
+                'quotaRemaining': 1533,
+                'dt': '2024-10-04',
+                'p123Uids': [774, 4737],
+                'tickers': ['AAPL:USA', 'IBM:USA'],
+                'predictions': [0.12, 0.34]
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id), json=params)
 
@@ -1017,14 +2097,82 @@ class Client:
 
     def stock_factor_download(self, factor_id: int):
         """
-        Stock factor download
-        :param factor_id:
-        :return:
+        Downloads data for a specific stock factor.
+
+        Args:
+            factor_id (int): Required. The ID of the stock factor.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and parallel
+            arrays of dates, tickers, values, and P123 UIDs representing the factor data.
+
+        Examples:
+            >>> client.stock_factor_download(1073741824)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'dates': [
+                    '2026-06-25'
+                ],
+                'tickers': [
+                    'string'
+                ],
+                'values': [
+                    0.1
+                ],
+                'p123Uids': [
+                    1073741824
+                ]
+            }
         """
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
     def data_prices(self, identifier: int | str, start: str, end: str | None, to_pandas=False):
-        """ """
+        """
+        Retrieves historical price data for a specific security by UID or ticker.
+
+        Tickers without a country code default to ':USA' (e.g., 'MSFT' becomes 'MSFT:USA').
+        Numeric identifiers are treated as P123 UIDs (e.g., '955' or '955:HKG').
+
+        Args:
+            identifier (int or str): Required. Security identifier (UID or ticker with optional country).
+            start (str): Required. Start date (inclusive) in 'yyyy-mm-dd' format.
+            end (str, optional): End date (inclusive) in 'yyyy-mm-dd' format. If None, defaults to the current date.
+            to_pandas (bool): If True, converts the prices list into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, security information,
+            and a list of historical price records (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> client.data_prices(identifier="MSFT", start="2025-01-03", end="2025-05-31", to_pandas=False)
+            {
+                'cost': 1,
+                'quotaRemaining': 1499,
+                'security': {
+                    'p123Uid': 5881,
+                    'ticker': 'MSFT:USA'
+                },
+                'prices': [
+                    {
+                        'date': '2025-01-03',
+                        'open': 150.25,
+                        'high': 152.3,
+                        'low': 149.8,
+                        'close': 152.35,
+                        'vol': 25678900
+                    },
+                    {
+                        'date': '2025-05-31',
+                        'open': 152.5,
+                        'high': 153.8,
+                        'low': 151.2,
+                        'close': 153.25,
+                        'vol': 24135600
+                    }
+                ]
+            }
+        """
         get_params = [("start", start)]
         if end is not None:
             get_params.append(("end", end))
