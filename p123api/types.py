@@ -72,7 +72,6 @@ class DataSeriesResult:
 class DataSeriesInfoResult:
     dataSeriesId: int
     name: str
-    description: str
 
 
 @api_result
@@ -84,7 +83,6 @@ class StockFactorResult:
 class StockFactorInfoResult:
     factorId: int
     name: str
-    description: str
 
 
 class RankingMethod(IntEnum):
@@ -110,4 +108,3 @@ class RankInfoResult:
 class StrategyInfoResult:
     strategyId: int
     name: str
-    description: str

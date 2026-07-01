@@ -1054,8 +1054,7 @@ class Client:
             >>> client.stock_factor_info(id=123)
             {
                 'factorId': 123,
-                'name': 'Stock factor name',
-                'description': 'Stock factor description'
+                'name': 'Stock factor name'
             }
         """
         ...
@@ -1075,8 +1074,7 @@ class Client:
             >>> client.stock_factor_info(name='Stock factor name')
             {
                 'factorId': 123,
-                'name': 'Stock factor name',
-                'description': 'Stock factor description'
+                'name': 'Stock factor name'
             }
         """
         ...
@@ -1100,8 +1098,7 @@ class Client:
             >>> client.stock_factor_info(factor_id=123)
             {
                 'factorId': 123,
-                'name': 'Stock factor name',
-                'description': 'Stock factor description'
+                'name': 'Stock factor name'
             }
         """
         ...
@@ -1132,8 +1129,7 @@ class Client:
             >>> client.data_series_info(id=123)
             {
                 'dataSeriesId': 123,
-                'name': 'Data series name',
-                'description': 'Data series description'
+                'name': 'Data series name'
             }
         """
         ...
@@ -1153,8 +1149,7 @@ class Client:
             >>> client.data_series_info(name='Data series name')
             {
                 'dataSeriesId': 123,
-                'name': 'Data series name',
-                'description': 'Data series description'
+                'name': 'Data series name'
             }
         """
         ...
@@ -1182,8 +1177,7 @@ class Client:
             >>> client.strategy_info(id=123)
             {
                 'strategyId': 123,
-                'name': 'Strategy name',
-                'description': 'Strategy description'
+                'name': 'Strategy name'
             }
         """
         ...
@@ -1203,8 +1197,7 @@ class Client:
             >>> client.strategy_info(name='Strategy name')
             {
                 'strategyId': 123,
-                'name': 'Strategy name',
-                'description': 'Strategy description'
+                'name': 'Strategy name'
             }
         """
         ...
