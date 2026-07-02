@@ -1,9 +1,45 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "p123api"
+version = "3.0.0a3"
+description = "Portfolio123 API wrapper"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    {name = "Portfolio123", email = "info@portfolio123.com"}
+]
+
+dependencies = [
+    "requests",
+    "typing_extensions",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+pandas = [
+    "pandas",
+]
+
+[project.urls]
+Homepage = "https://github.com/portfolio-123/p123api-py"
+
+[tool.setuptools.packages.find]
+include = ["p123api*"]
+
 [tool.black]
 line-length = 140
 skip-magic-trailing-comma = true
 
 [tool.pyright]
-pythonVersion = "3.6"
+pythonVersion = "3.10"
 typeCheckingMode = "basic"
 deprecateTypingAliases = true
 disableBytesTypePromotions = true
