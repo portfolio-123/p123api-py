@@ -165,7 +165,7 @@ class Client:
         data: str | IO | None = None,
         headers: dict[str, str] | None = None,
         result_type: type | None = None,
-    ):
+    ) -> Any:
         """
         Request with authentication fallback, used by all requests (except authentication)
         :param method: request method
@@ -194,6 +194,8 @@ class Client:
 
                 if resp.status_code == 200:
                     json = resp.json()
+                    self.cost = json.get("cost") if isinstance(json, dict) else None
+                    self.quotaRemaining = json.get("quotaRemaining") if isinstance(json, dict) else None
                     return result_type(json) if result_type is not None else json
 
                 if resp.status_code == 401 or resp.status_code == 403:
@@ -529,8 +531,6 @@ class Client:
             ... )
             {
                 'id': 98765,
-                'cost': 1,
-                'quotaRemaining': 45678
             }
         """
 
@@ -630,8 +630,6 @@ class Client:
             >>> client.strategy_copy(123, 'Sim copy', 'SIM')
             {
                 'id': 12345,
-                'cost': 1,
-                'quotaRemaining': 45678
             }
         """
         return self._req_with_auth_fallback(
@@ -659,8 +657,6 @@ class Client:
             >>> client.book_copy(123, 'Sim book copy', 'BOOKSIM')
             {
                 'id': 12345,
-                'cost': 1,
-                'quotaRemaining': 45678
             }
         """
         return self._req_with_auth_fallback(
