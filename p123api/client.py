@@ -612,7 +612,7 @@ class Client:
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id))
 
-    def strategy_copy(self, id: int, name: str, type: Literal["PTF", "SIM"]) -> IdResult:
+    def strategy_copy(self, id: int, name: str, type: Literal["PTF", "SIM"] | None = None) -> IdResult:
         """
         Copy an existing strategy to a new strategy.
 
@@ -639,7 +639,7 @@ class Client:
             result_type=IdResult,
         )
 
-    def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"]) -> IdResult:
+    def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"] | None = None) -> IdResult:
         """
         Copy an existing book to a new book.
 
