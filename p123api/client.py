@@ -195,8 +195,9 @@ class Client:
 
                 if resp.status_code == 200:
                     json = resp.json()
-                    self.cost = json.get("cost") if isinstance(json, dict) else None
-                    self.quotaRemaining = json.get("quotaRemaining") if isinstance(json, dict) else None
+                    if isinstance(json, dict):
+                        self.cost = json.get("cost")
+                        self.quotaRemaining = json.get("quotaRemaining")
                     return result_type(json) if result_type is not None else json
 
                 if resp.status_code == 401 or resp.status_code == 403:
@@ -520,7 +521,7 @@ class Client:
             currency: Ranking method currency (e.g., "USD").
 
         Returns:
-            An IdResult containing the new ranking system's details.
+            An object containing the new ranking system's details.
 
         Examples:
             >>> client.rank_create(
@@ -530,9 +531,7 @@ class Client:
             ...     type='Stock',
             ...     currency='USD'
             ... )
-            {
-                'id': 98765,
-            }
+            IdResult(id=98765)
         """
 
         return self._req_with_auth_fallback(
@@ -552,21 +551,21 @@ class Client:
             id: The unique identifier of the ranking system.
 
         Returns:
-            A RankInfoResult containing the ranking system's details.
+            An object containing the ranking system's details.
 
         Examples:
             >>> client.rank_get(id=12345)
-            {
-                'name': 'My Ranking System',
-                'id': 12345,
-                'xml': '<RankingSystem>...</RankingSystem>',
-                'currency': 'USD',
-                'description': 'Ranking system description',
-                'rankingMethod': 1,
-                'type': 'Stock',
-                'groupUid': 100,
-                'resolveGroupUid': 200
-            }
+            RankInfoResult(
+                name='My Ranking System',
+                id=12345,
+                xml='<RankingSystem>...</RankingSystem>',
+                currency='USD',
+                description='Ranking system description',
+                rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
+                type='Stock',
+                groupUid=100,
+                resolveGroupUid=200
+            )
         """
         ...
 
@@ -581,21 +580,21 @@ class Client:
             name: The name of the ranking system.
 
         Returns:
-            A RankInfoResult containing the ranking system's details.
+            An object containing the ranking system's details.
 
         Examples:
             >>> client.rank_get(name='My Ranking System')
-            {
-                'name': 'My Ranking System',
-                'id': 12345,
-                'xml': '<RankingSystem>...</RankingSystem>',
-                'currency': 'USD',
-                'description': 'Ranking system description',
-                'rankingMethod': 1,
-                'type': 'Stock',
-                'groupUid': 100,
-                'resolveGroupUid': 200
-            }
+            RankInfoResult(
+                name='My Ranking System',
+                id=12345,
+                xml='<RankingSystem>...</RankingSystem>',
+                currency='USD',
+                description='Ranking system description',
+                rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
+                type='Stock',
+                groupUid=100,
+                resolveGroupUid=200
+            )
         """
         ...
 
@@ -625,13 +624,11 @@ class Client:
             type: Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy.
 
         Returns:
-            An IdResult containing the new strategy's id.
+            An object containing the new strategy's id.
 
         Examples:
             >>> client.strategy_copy(123, 'Sim copy', 'SIM')
-            {
-                'id': 12345,
-            }
+            IdResult(id=12345)
         """
         return self._req_with_auth_fallback(
             method="POST",
@@ -652,13 +649,11 @@ class Client:
             type: Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book.
 
         Returns:
-            An IdResult containing the new book's id.
+            An object containing the new book's id.
 
         Examples:
             >>> client.book_copy(123, 'Sim book copy', 'BOOKSIM')
-            {
-                'id': 12345,
-            }
+            IdResult(id=12345)
         """
         return self._req_with_auth_fallback(
             method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}, result_type=IdResult
@@ -1045,14 +1040,14 @@ class Client:
             id: Stock factor ID.
 
         Returns:
-            A StockFactorInfoResult containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(id=123)
-            {
-                'factorId': 123,
-                'name': 'Stock factor name'
-            }
+            StockFactorInfoResult(
+                factorId=123,
+                name='Stock factor name'
+            )
         """
         ...
 
@@ -1065,14 +1060,14 @@ class Client:
             name: Stock factor name.
 
         Returns:
-            A StockFactorInfoResult containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(name='Stock factor name')
-            {
-                'factorId': 123,
-                'name': 'Stock factor name'
-            }
+            StockFactorInfoResult(
+                factorId=123,
+                name='Stock factor name'
+            )
         """
         ...
 
@@ -1089,14 +1084,14 @@ class Client:
             factor_id: Stock factor ID.
 
         Returns:
-            A StockFactorInfoResult containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(factor_id=123)
-            {
-                'factorId': 123,
-                'name': 'Stock factor name'
-            }
+            StockFactorInfoResult(
+                factorId=123,
+                name='Stock factor name'
+            )
         """
         ...
 
@@ -1120,14 +1115,14 @@ class Client:
             id: Data series ID.
 
         Returns:
-            A DataSeriesInfoResult containing the basic data series info.
+            An object containing the basic data series info.
 
         Examples:
             >>> client.data_series_info(id=123)
-            {
-                'dataSeriesId': 123,
-                'name': 'Data series name'
-            }
+            DataSeriesInfoResult(
+                dataSeriesId=123,
+                name='Data series name'
+            )
         """
         ...
 
@@ -1140,14 +1135,14 @@ class Client:
             name: Data series name.
 
         Returns:
-            A DataSeriesInfoResult containing the basic data series info.
+            An object containing the basic data series info.
 
         Examples:
             >>> client.data_series_info(name='Data series name')
-            {
-                'dataSeriesId': 123,
-                'name': 'Data series name'
-            }
+            DataSeriesInfoResult(
+                dataSeriesId=123,
+                name='Data series name'
+            )
         """
         ...
 
@@ -1168,14 +1163,14 @@ class Client:
             id: Strategy ID.
 
         Returns:
-            A StrategyInfoResult containing the basic strategy info.
+            An object containing the basic strategy info.
 
         Examples:
             >>> client.strategy_info(id=123)
-            {
-                'strategyId': 123,
-                'name': 'Strategy name'
-            }
+            StrategyInfoResult(
+                strategyId=123,
+                name='Strategy name'
+            )
         """
         ...
 
@@ -1188,14 +1183,14 @@ class Client:
             name: Strategy name.
 
         Returns:
-            A StrategyInfoResult containing the basic strategy info.
+            An object containing the basic strategy info.
 
         Examples:
             >>> client.strategy_info(name='Strategy name')
-            {
-                'strategyId': 123,
-                'name': 'Strategy name'
-            }
+            StrategyInfoResult(
+                strategyId=123,
+                name='Strategy name'
+            )
         """
         ...
 
