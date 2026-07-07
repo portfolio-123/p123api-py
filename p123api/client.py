@@ -527,7 +527,7 @@ class Client:
             >>> client.rank_create(
             ...     'New Ranking System',
             ...     '<RankingSystem RankType="Higher">...</RankingSystem>',
-            ...     rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
+            ...     rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
             ...     type='Stock',
             ...     currency='USD'
             ... )
@@ -561,7 +561,7 @@ class Client:
                 xml='<RankingSystem>...</RankingSystem>',
                 currency='USD',
                 description='Ranking system description',
-                rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
+                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
                 type='Stock',
                 groupUid=100,
                 resolveGroupUid=200
@@ -590,7 +590,7 @@ class Client:
                 xml='<RankingSystem>...</RankingSystem>',
                 currency='USD',
                 description='Ranking system description',
-                rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
+                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
                 type='Stock',
                 groupUid=100,
                 resolveGroupUid=200
