@@ -88,7 +88,8 @@ class Client:
         self._max_req_retries = 5
         self._timeout = 300
         self._token = None
-
+        self.cost = None
+        self.quotaRemaining = None
         if not isinstance(api_id, (str, int)):
             raise ClientException("api_id must be str or int")
         if not isinstance(api_key, str):
@@ -519,7 +520,7 @@ class Client:
             currency: Ranking method currency (e.g., "USD").
 
         Returns:
-            A dictionary containing the new ranking system's details.
+            An IdResult containing the new ranking system's details.
 
         Examples:
             >>> client.rank_create(
@@ -551,7 +552,7 @@ class Client:
             id: The unique identifier of the ranking system.
 
         Returns:
-            A dictionary containing the ranking system's details.
+            A RankInfoResult containing the ranking system's details.
 
         Examples:
             >>> client.rank_get(id=12345)
@@ -580,7 +581,7 @@ class Client:
             name: The name of the ranking system.
 
         Returns:
-            A dictionary containing the ranking system's details.
+            A RankInfoResult containing the ranking system's details.
 
         Examples:
             >>> client.rank_get(name='My Ranking System')
@@ -624,7 +625,7 @@ class Client:
             type: Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy.
 
         Returns:
-            A dictionary containing the new strategy's details.
+            An IdResult containing the new strategy's id.
 
         Examples:
             >>> client.strategy_copy(123, 'Sim copy', 'SIM')
@@ -651,7 +652,7 @@ class Client:
             type: Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book.
 
         Returns:
-            A dictionary containing the new book's details.
+            An IdResult containing the new book's id.
 
         Examples:
             >>> client.book_copy(123, 'Sim book copy', 'BOOKSIM')
@@ -1044,7 +1045,7 @@ class Client:
             id: Stock factor ID.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            A StockFactorInfoResult containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(id=123)
@@ -1064,7 +1065,7 @@ class Client:
             name: Stock factor name.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            A StockFactorInfoResult containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(name='Stock factor name')
@@ -1088,7 +1089,7 @@ class Client:
             factor_id: Stock factor ID.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            A StockFactorInfoResult containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(factor_id=123)
@@ -1119,7 +1120,7 @@ class Client:
             id: Data series ID.
 
         Returns:
-            A dictionary containing the basic data series info.
+            A DataSeriesInfoResult containing the basic data series info.
 
         Examples:
             >>> client.data_series_info(id=123)
@@ -1139,7 +1140,7 @@ class Client:
             name: Data series name.
 
         Returns:
-            A dictionary containing the basic data series info.
+            A DataSeriesInfoResult containing the basic data series info.
 
         Examples:
             >>> client.data_series_info(name='Data series name')
@@ -1167,7 +1168,7 @@ class Client:
             id: Strategy ID.
 
         Returns:
-            A dictionary containing the basic strategy info.
+            A StrategyInfoResult containing the basic strategy info.
 
         Examples:
             >>> client.strategy_info(id=123)
@@ -1187,7 +1188,7 @@ class Client:
             name: Strategy name.
 
         Returns:
-            A dictionary containing the basic strategy info.
+            A StrategyInfoResult containing the basic strategy info.
 
         Examples:
             >>> client.strategy_info(name='Strategy name')
