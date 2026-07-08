@@ -198,6 +198,9 @@ class Client:
                     if isinstance(json, dict):
                         self.cost = json.get("cost")
                         self.quotaRemaining = json.get("quotaRemaining")
+                    else:
+                        self.cost = None
+                        self.quotaRemaining = None
                     return result_type(json) if result_type is not None else json
 
                 if resp.status_code == 401 or resp.status_code == 403:
@@ -555,17 +558,7 @@ class Client:
 
         Examples:
             >>> client.rank_get(id=12345)
-            RankInfoResult(
-                name='My Ranking System',
-                id=12345,
-                xml='<RankingSystem>...</RankingSystem>',
-                currency='USD',
-                description='Ranking system description',
-                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
-                type='Stock',
-                groupUid=100,
-                resolveGroupUid=200
-            )
+            RankInfoResult(name='My Ranking System', id=12345, xml='<RankingSystem>...</RankingSystem>', currency='USD', description='Ranking system description', rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>, type='Stock', groupUid=100, resolveGroupUid=200)
         """
         ...
 
@@ -584,17 +577,7 @@ class Client:
 
         Examples:
             >>> client.rank_get(name='My Ranking System')
-            RankInfoResult(
-                name='My Ranking System',
-                id=12345,
-                xml='<RankingSystem>...</RankingSystem>',
-                currency='USD',
-                description='Ranking system description',
-                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
-                type='Stock',
-                groupUid=100,
-                resolveGroupUid=200
-            )
+            RankInfoResult(name='My Ranking System', id=12345, xml='<RankingSystem>...</RankingSystem>', currency='USD', description='Ranking system description', rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>, type='Stock', groupUid=100, resolveGroupUid=200)
         """
         ...
 
@@ -1044,10 +1027,7 @@ class Client:
 
         Examples:
             >>> client.stock_factor_info(id=123)
-            StockFactorInfoResult(
-                factorId=123,
-                name='Stock factor name'
-            )
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
@@ -1064,10 +1044,7 @@ class Client:
 
         Examples:
             >>> client.stock_factor_info(name='Stock factor name')
-            StockFactorInfoResult(
-                factorId=123,
-                name='Stock factor name'
-            )
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
@@ -1088,10 +1065,7 @@ class Client:
 
         Examples:
             >>> client.stock_factor_info(factor_id=123)
-            StockFactorInfoResult(
-                factorId=123,
-                name='Stock factor name'
-            )
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
@@ -1119,10 +1093,7 @@ class Client:
 
         Examples:
             >>> client.data_series_info(id=123)
-            DataSeriesInfoResult(
-                dataSeriesId=123,
-                name='Data series name'
-            )
+            DataSeriesInfoResult(dataSeriesId=123, name='Data series name')
         """
         ...
 
@@ -1139,10 +1110,7 @@ class Client:
 
         Examples:
             >>> client.data_series_info(name='Data series name')
-            DataSeriesInfoResult(
-                dataSeriesId=123,
-                name='Data series name'
-            )
+            DataSeriesInfoResult(dataSeriesId=123, name='Data series name')
         """
         ...
 
@@ -1167,10 +1135,7 @@ class Client:
 
         Examples:
             >>> client.strategy_info(id=123)
-            StrategyInfoResult(
-                strategyId=123,
-                name='Strategy name'
-            )
+            StrategyInfoResult(strategyId=123, name='Strategy name')
         """
         ...
 
@@ -1187,10 +1152,7 @@ class Client:
 
         Examples:
             >>> client.strategy_info(name='Strategy name')
-            StrategyInfoResult(
-                strategyId=123,
-                name='Strategy name'
-            )
+            StrategyInfoResult(strategyId=123, name='Strategy name')
         """
         ...
 
