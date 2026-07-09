@@ -88,7 +88,8 @@ class Client:
         self._max_req_retries = 5
         self._timeout = 300
         self._token = None
-
+        self.cost = None
+        self.quotaRemaining = None
         if not isinstance(api_id, (str, int)):
             raise ClientException("api_id must be str or int")
         if not isinstance(api_key, str):
@@ -165,7 +166,7 @@ class Client:
         data: str | IO | None = None,
         headers: dict[str, str] | None = None,
         result_type: type | None = None,
-    ):
+    ) -> Any:
         """
         Request with authentication fallback, used by all requests (except authentication)
         :param method: request method
@@ -194,6 +195,12 @@ class Client:
 
                 if resp.status_code == 200:
                     json = resp.json()
+                    if isinstance(json, dict):
+                        self.cost = json.get("cost")
+                        self.quotaRemaining = json.get("quotaRemaining")
+                    else:
+                        self.cost = None
+                        self.quotaRemaining = None
                     return result_type(json) if result_type is not None else json
 
                 if resp.status_code == 401 or resp.status_code == 403:
@@ -517,21 +524,17 @@ class Client:
             currency: Ranking method currency (e.g., "USD").
 
         Returns:
-            A dictionary containing the new ranking system's details.
+            An object containing the new ranking system's details.
 
         Examples:
             >>> client.rank_create(
             ...     'New Ranking System',
             ...     '<RankingSystem RankType="Higher">...</RankingSystem>',
-            ...     rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
+            ...     rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
             ...     type='Stock',
             ...     currency='USD'
             ... )
-            {
-                'id': 98765,
-                'cost': 1,
-                'quotaRemaining': 45678
-            }
+            IdResult(id=98765)
         """
 
         return self._req_with_auth_fallback(
@@ -551,21 +554,21 @@ class Client:
             id: The unique identifier of the ranking system.
 
         Returns:
-            A dictionary containing the ranking system's details.
+            An object containing the ranking system's details.
 
         Examples:
             >>> client.rank_get(id=12345)
-            {
-                'name': 'My Ranking System',
-                'id': 12345,
-                'xml': '<RankingSystem>...</RankingSystem>',
-                'currency': 'USD',
-                'description': 'Ranking system description',
-                'rankingMethod': 1,
-                'type': 'Stock',
-                'groupUid': 100,
-                'resolveGroupUid': 200
-            }
+            RankInfoResult(
+                name='My Ranking System',
+                id=12345,
+                xml='<RankingSystem,...</RankingSystem>',
+                currency='USD',
+                description='Ranking system description',
+                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
+                type='Stock',
+                groupUid=100,
+                resolveGroupUid=200
+            )
         """
         ...
 
@@ -580,21 +583,21 @@ class Client:
             name: The name of the ranking system.
 
         Returns:
-            A dictionary containing the ranking system's details.
+            An object containing the ranking system's details.
 
         Examples:
             >>> client.rank_get(name='My Ranking System')
-            {
-                'name': 'My Ranking System',
-                'id': 12345,
-                'xml': '<RankingSystem>...</RankingSystem>',
-                'currency': 'USD',
-                'description': 'Ranking system description',
-                'rankingMethod': 1,
-                'type': 'Stock',
-                'groupUid': 100,
-                'resolveGroupUid': 200
-            }
+            RankInfoResult(
+                name='My Ranking System',
+                id=12345,
+                xml='<RankingSystem,...</RankingSystem>',
+                currency='USD',
+                description='Ranking system description',
+                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
+                type='Stock',
+                groupUid=100,
+                resolveGroupUid=200
+            )
         """
         ...
 
@@ -612,7 +615,7 @@ class Client:
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id))
 
-    def strategy_copy(self, id: int, name: str, type: Literal["PTF", "SIM"]) -> IdResult:
+    def strategy_copy(self, id: int, name: str, type: Literal["PTF", "SIM"] | None = None) -> IdResult:
         """
         Copy an existing strategy to a new strategy.
 
@@ -624,15 +627,11 @@ class Client:
             type: Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy.
 
         Returns:
-            A dictionary containing the new strategy's details.
+            An object containing the new strategy's id.
 
         Examples:
             >>> client.strategy_copy(123, 'Sim copy', 'SIM')
-            {
-                'id': 12345,
-                'cost': 1,
-                'quotaRemaining': 45678
-            }
+            IdResult(id=12345)
         """
         return self._req_with_auth_fallback(
             method="POST",
@@ -641,7 +640,7 @@ class Client:
             result_type=IdResult,
         )
 
-    def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"]) -> IdResult:
+    def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"] | None = None) -> IdResult:
         """
         Copy an existing book to a new book.
 
@@ -653,15 +652,11 @@ class Client:
             type: Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book.
 
         Returns:
-            A dictionary containing the new book's details.
+            An object containing the new book's id.
 
         Examples:
             >>> client.book_copy(123, 'Sim book copy', 'BOOKSIM')
-            {
-                'id': 12345,
-                'cost': 1,
-                'quotaRemaining': 45678
-            }
+            IdResult(id=12345)
         """
         return self._req_with_auth_fallback(
             method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}, result_type=IdResult
@@ -1048,14 +1043,11 @@ class Client:
             id: Stock factor ID.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(id=123)
-            {
-                'factorId': 123,
-                'name': 'Stock factor name'
-            }
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
@@ -1068,14 +1060,11 @@ class Client:
             name: Stock factor name.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(name='Stock factor name')
-            {
-                'factorId': 123,
-                'name': 'Stock factor name'
-            }
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
@@ -1092,14 +1081,11 @@ class Client:
             factor_id: Stock factor ID.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(factor_id=123)
-            {
-                'factorId': 123,
-                'name': 'Stock factor name'
-            }
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
@@ -1123,14 +1109,11 @@ class Client:
             id: Data series ID.
 
         Returns:
-            A dictionary containing the basic data series info.
+            An object containing the basic data series info.
 
         Examples:
             >>> client.data_series_info(id=123)
-            {
-                'dataSeriesId': 123,
-                'name': 'Data series name'
-            }
+            DataSeriesInfoResult(dataSeriesId=123, name='Data series name')
         """
         ...
 
@@ -1143,14 +1126,11 @@ class Client:
             name: Data series name.
 
         Returns:
-            A dictionary containing the basic data series info.
+            An object containing the basic data series info.
 
         Examples:
             >>> client.data_series_info(name='Data series name')
-            {
-                'dataSeriesId': 123,
-                'name': 'Data series name'
-            }
+            DataSeriesInfoResult(dataSeriesId=123, name='Data series name')
         """
         ...
 
@@ -1171,14 +1151,11 @@ class Client:
             id: Strategy ID.
 
         Returns:
-            A dictionary containing the basic strategy info.
+            An object containing the basic strategy info.
 
         Examples:
             >>> client.strategy_info(id=123)
-            {
-                'strategyId': 123,
-                'name': 'Strategy name'
-            }
+            StrategyInfoResult(strategyId=123, name='Strategy name')
         """
         ...
 
@@ -1191,14 +1168,11 @@ class Client:
             name: Strategy name.
 
         Returns:
-            A dictionary containing the basic strategy info.
+            An object containing the basic strategy info.
 
         Examples:
             >>> client.strategy_info(name='Strategy name')
-            {
-                'strategyId': 123,
-                'name': 'Strategy name'
-            }
+            StrategyInfoResult(strategyId=123, name='Strategy name')
         """
         ...
 
