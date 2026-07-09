@@ -558,7 +558,17 @@ class Client:
 
         Examples:
             >>> client.rank_get(id=12345)
-            RankInfoResult(name='My Ranking System', id=12345, xml='<RankingSystem>...</RankingSystem>', currency='USD', description='Ranking system description', rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>, type='Stock', groupUid=100, resolveGroupUid=200)
+            RankInfoResult(
+                name='My Ranking System',
+                id=12345,
+                xml='<RankingSystem,...</RankingSystem>',
+                currency='USD',
+                description='Ranking system description',
+                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
+                type='Stock',
+                groupUid=100,
+                resolveGroupUid=200
+            )
         """
         ...
 
@@ -577,7 +587,17 @@ class Client:
 
         Examples:
             >>> client.rank_get(name='My Ranking System')
-            RankInfoResult(name='My Ranking System', id=12345, xml='<RankingSystem>...</RankingSystem>', currency='USD', description='Ranking system description', rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>, type='Stock', groupUid=100, resolveGroupUid=200)
+            RankInfoResult(
+                name='My Ranking System',
+                id=12345,
+                xml='<RankingSystem,...</RankingSystem>',
+                currency='USD',
+                description='Ranking system description',
+                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
+                type='Stock',
+                groupUid=100,
+                resolveGroupUid=200
+            )
         """
         ...
 
