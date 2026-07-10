@@ -60,32 +60,78 @@ def api_result(cls):
 
 @api_result
 class IdResult:
+    """
+    Contains the identifier resulting from an API operation.
+
+    Attributes:
+        id: The unique integer identifier.
+    """
+
     id: int
 
 
 @api_result
 class DataSeriesResult:
+    """
+    Contains the identifier for a data series operation.
+
+    Attributes:
+        dataSeriesId: The unique integer identifier of the data series.
+    """
+
     dataSeriesId: int
 
 
 @api_result
 class DataSeriesInfoResult:
+    """
+    Contains the basic identification details of a data series.
+
+    Attributes:
+        dataSeriesId: The unique integer identifier of the data series.
+        name: The name of the data series.
+    """
+
     dataSeriesId: int
     name: str
 
 
 @api_result
 class StockFactorResult:
+    """
+    Contains the identifier for a stock factor operation.
+
+    Attributes:
+        factorId: The unique integer identifier of the stock factor.
+    """
+
     factorId: int
 
 
 @api_result
 class StockFactorInfoResult:
+    """
+    Contains the basic identification details of a stock factor.
+
+    Attributes:
+        factorId: The unique integer identifier of the stock factor.
+        name: The name of the stock factor.
+    """
+
     factorId: int
     name: str
 
 
 class RankingMethod(IntEnum):
+    """
+    Defines the methods used for calculating rankings.
+
+    Attributes:
+        PERCENTILE_NA_NEGATIVE: Percentile NAs Negative (2).
+        PERCENTILE_NA_NEUTRAL: Percentile NAs Neutral (4).
+        NORMAL_DISTRIBUTION: Normal Distribution (Experimental) (1).
+    """
+
     PERCENTILE_NA_NEGATIVE = 2
     PERCENTILE_NA_NEUTRAL = 4
     NORMAL_DISTRIBUTION = 1
@@ -93,18 +139,39 @@ class RankingMethod(IntEnum):
 
 @api_result
 class RankInfoResult:
+    """
+    Contains the complete details of a specific ranking system.
+
+    Attributes:
+        name: Name of the ranking system.
+        id: The unique integer identifier of the ranking system.
+        xml: Nodes in XML format.
+        currency: The currency associated with the system (e.g., 'USD').
+        rankingMethod: The specific method used to calculate rankings, represented by the RankingMethod enum.
+        type: Type of ranking system, restricted to 'Stock' or 'ETF'.
+        groupUid: Group ID.
+        resolveGroupUid:  Group Context ID.
+    """
+
     name: str
     id: int
     xml: str
     currency: str
     rankingMethod: RankingMethod
     type: Literal["Stock", "ETF"]
-    description: str | None
     groupUid: int
     resolveGroupUid: int
 
 
 @api_result
 class StrategyInfoResult:
+    """
+    Contains the basic identification details of a strategy.
+
+    Attributes:
+        strategyId: The unique integer identifier of the strategy.
+        name: The name of the strategy.
+    """
+
     strategyId: int
     name: str
