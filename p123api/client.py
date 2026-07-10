@@ -541,6 +541,7 @@ class Client:
             method="POST",
             url=self._endpoint + RANK_CREATE,
             json={"name": name, "nodes": nodes, "currency": currency, "type": type, "rankingMethod": rankingMethod},
+            result_type=IdResult,
         )
 
     @overload
