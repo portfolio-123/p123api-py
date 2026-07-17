@@ -592,7 +592,6 @@ class Client:
                 id=12345,
                 xml='<RankingSystem,...</RankingSystem>',
                 currency='USD',
-                description='Ranking system description',
                 rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
                 type='Stock',
                 groupUid=100,
