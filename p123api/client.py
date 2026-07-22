@@ -6,6 +6,7 @@ from typing import IO, Any, Literal, overload
 from typing_extensions import deprecated
 
 from p123api.types import (
+    Currency,
     DataSeriesInfoResult,
     DataSeriesResult,
     IdResult,
@@ -509,7 +510,7 @@ class Client:
         *,
         rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
         type: Literal["Stock", "ETF"] = "Stock",
-        currency="USD",
+        currency: Currency = "USD",
     ) -> IdResult:
         """
         Creates a new ranking system.
@@ -521,16 +522,16 @@ class Client:
             nodes: Ranking system nodes XML.
             rankingMethod: Ranking method to be used.
             type: Ranking method type. Use "Stock" or "ETF".
-            currency: Ranking method currency (e.g., "USD").
+            currency: Ranking method currency.
 
         Returns:
-            An object containing the new ranking system's details.
+            An object containing the new ranking system's id.
 
         Examples:
             >>> client.rank_create(
             ...     'New Ranking System',
             ...     '<RankingSystem RankType="Higher">...</RankingSystem>',
-            ...     rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
+            ...     rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
             ...     type='Stock',
             ...     currency='USD'
             ... )

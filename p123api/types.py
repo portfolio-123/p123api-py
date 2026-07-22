@@ -58,6 +58,9 @@ def api_result(cls):
     return cls
 
 
+Currency = Literal["USD", "CAD", "EUR", "GBP", "CHF", "NOK", "PLN", "SEK", "TRY"]
+
+
 @api_result
 class IdResult:
     """
@@ -156,7 +159,7 @@ class RankInfoResult:
     name: str
     id: int
     xml: str
-    currency: str
+    currency: Currency
     rankingMethod: RankingMethod
     type: Literal["Stock", "ETF"]
     groupUid: int
