@@ -427,7 +427,7 @@ class Client:
                 date_data = [[] for _ in f_indices]
 
                 for formula_idx in f_indices:
-                    data[names[formula_idx]] = []
+                    data[names[formula_idx]] = date_data[formula_idx]
 
                 for dtObj in ret["dates"]:
                     data["dates"].extend([dtObj["dt"]] * len(dtObj["p123Uids"]))
