@@ -1,15 +1,12 @@
-from collections import defaultdict
+from collections.abc import Callable
 import requests
 import time
-import pandas
 from string import Template
-from typing import IO, Callable, List, Literal, Optional, Union, overload
+from typing import IO, Any, Literal, overload
 from typing_extensions import deprecated
-import numpy
 
-numpy.any(32)
-
-from .types import (
+from p123api.types import (
+    Currency,
     DataSeriesInfoResult,
     DataSeriesResult,
     IdResult,
@@ -59,16 +56,15 @@ AIFACTOR_PREDICT_PATH = Template("/aiFactor/predict/$id")
 
 
 class ClientException(Exception):
-    def __init__(self, message, *, resp: Union[requests.Response, None] = None, exception: Union[Exception, None] = None):
+    def __init__(self, message, *, resp: requests.Response | None = None):
         super().__init__(message)
         self._resp = resp
-        self._exception = exception
 
     def get_resp(self):
         return self._resp
 
     def get_cause(self):
-        return self._exception
+        return self.__cause__
 
     @staticmethod
     def build(message, resp: requests.Response):
@@ -87,19 +83,20 @@ class Client:
     class for interfacing with P123 API
     """
 
-    def __init__(self, *, api_id, api_key, auth_extra={}, endpoint=ENDPOINT, verify_requests=True):
+    def __init__(self, *, api_id: str | int, api_key: str, auth_extra={}, endpoint=ENDPOINT, verify_requests=True):
         self._endpoint = endpoint
         self._verify_requests = verify_requests
         self._max_req_retries = 5
         self._timeout = 300
         self._token = None
+        self.cost = None
+        self.quotaRemaining = None
+        if not isinstance(api_id, (str, int)):
+            raise ClientException("api_id must be str or int")
+        if not isinstance(api_key, str):
+            raise ClientException("api_key must be str")
 
-        if not isinstance(api_id, str) or not api_id:
-            raise ClientException("api_id needs to be a non-empty str")
-        if not isinstance(api_key, str) or not api_key:
-            raise ClientException("api_key needs to be a non-empty str")
-
-        self._auth_params = {"apiId": api_id, "apiKey": api_key, **auth_extra}
+        self._auth_params = {"apiId": str(api_id), "apiKey": api_key, **auth_extra}
         self._session = requests.Session()
         self._method_map = {"GET": self._session.get, "POST": self._session.post, "DELETE": self._session.delete}
 
@@ -112,12 +109,12 @@ class Client:
     def close(self):
         self._session.close()
 
-    def set_max_request_retries(self, retries):
+    def set_max_request_retries(self, retries: int):
         if not isinstance(retries, int) or retries < 1 or retries > 10:
             raise ClientException("retries needs to be an int between 1 and 10")
         self._max_req_retries = retries
 
-    def set_timeout(self, timeout):
+    def set_timeout(self, timeout: int):
         if not isinstance(timeout, int) or timeout < 1:
             raise ClientException("timeout needs to be an int greater than 0")
         self._timeout = timeout
@@ -161,8 +158,16 @@ class Client:
             raise ClientException(f"API authentication failed{message}", resp=resp)
 
     def _req_with_auth_fallback(
-        self, *, method: Literal["GET", "POST", "DELETE"] = "POST", url: str, json=None, params=None, data=None, headers=None
-    ):
+        self,
+        *,
+        method: Literal["GET", "POST", "DELETE"] = "POST",
+        url: str,
+        json: Any = None,
+        params: list[tuple[str, Any]] | None = None,
+        data: str | IO | None = None,
+        headers: dict[str, str] | None = None,
+        result_type: type | None = None,
+    ) -> Any:
         """
         Request with authentication fallback, used by all requests (except authentication)
         :param method: request method
@@ -190,7 +195,14 @@ class Client:
             ) as resp:
 
                 if resp.status_code == 200:
-                    return resp.json()
+                    json = resp.json()
+                    if isinstance(json, dict):
+                        self.cost = json.get("cost")
+                        self.quotaRemaining = json.get("quotaRemaining")
+                    else:
+                        self.cost = None
+                        self.quotaRemaining = None
+                    return result_type(json) if result_type is not None else json
 
                 if resp.status_code == 401 or resp.status_code == 403:
                     del self._session.headers["Authorization"]
@@ -215,6 +227,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             rows = ret["rows"]
             ret["average"][0] = "Average"
             rows.append(ret["average"])
@@ -236,6 +250,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_BACKTEST_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             columns = [
                 "",
                 "Total Return",
@@ -314,6 +330,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_RUN_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             ret = pandas.DataFrame(data=ret["rows"], columns=ret["columns"])
 
         return ret
@@ -344,6 +362,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             raw_obj = dict(ret)
             with_cusips = params.get("cusips") is not None
             with_name = params.get("includeNames")
@@ -380,28 +400,38 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_UNIVERSE_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             raw_obj = ret
-            names = params.get("names")
             f_indices = range(len(params["formulas"]))
+
+            names = params.get("names")
+            if names is None:
+                names = [f"formula{i + 1}" for i in f_indices]
+
             if params.get("asOfDt"):
                 for formula_idx in f_indices:
-                    name = names[formula_idx] if names is not None else f"formula{formula_idx + 1}"
+                    name = names[formula_idx]
                     ret[name] = ret["data"][formula_idx]
                 del ret["dt"], ret["cost"], ret["quotaRemaining"], ret["data"]
                 ret = pandas.DataFrame(ret)
             else:
+                includeNames = bool(params.get("includeNames"))
+                includeFigi = bool(params.get("figi"))
+
                 data = {"dates": [], "p123Uids": [], "tickers": []}
-                includeNames = False
-                if params.get("includeNames"):
+                if includeNames:
                     data["names"] = []
-                    includeNames = True
-                includeFigi = False
-                if params.get("figi"):
+                if includeFigi:
                     data["figi"] = []
-                    includeFigi = True
-                formulas = defaultdict(list)
+
+                date_data = [[] for _ in f_indices]
+
+                for formula_idx in f_indices:
+                    data[names[formula_idx]] = date_data[formula_idx]
+
                 for dtObj in ret["dates"]:
-                    data["dates"].extend(dtObj["dt"] for _ in range(len(dtObj["p123Uids"])))
+                    data["dates"].extend([dtObj["dt"]] * len(dtObj["p123Uids"]))
                     data["p123Uids"].extend(dtObj["p123Uids"])
                     data["tickers"].extend(dtObj["tickers"])
                     if includeNames:
@@ -409,10 +439,7 @@ class Client:
                     if includeFigi:
                         data["figi"].extend(dtObj["figi"])
                     for formula_idx in f_indices:
-                        formulas[formula_idx].extend(dtObj["data"][formula_idx])
-                for formula_idx in f_indices:
-                    name = names[formula_idx] if names is not None else f"formula{formula_idx + 1}"
-                    data[name] = formulas[formula_idx]
+                        date_data[formula_idx].extend(dtObj["data"][formula_idx])
                 ret = pandas.DataFrame(data)
             ret.attrs["raw_obj"] = raw_obj
 
@@ -428,6 +455,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + RANK_RANKS_PATH, json=params)
 
         if to_pandas:
+            import pandas
+
             names = dict()
             raw_obj = dict(ret)
             del ret["cost"], ret["quotaRemaining"], ret["dt"]
@@ -481,7 +510,7 @@ class Client:
         *,
         rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
         type: Literal["Stock", "ETF"] = "Stock",
-        currency="USD",
+        currency: Currency = "USD",
     ) -> IdResult:
         """
         Creates a new ranking system.
@@ -493,10 +522,10 @@ class Client:
             nodes: Ranking system nodes XML.
             rankingMethod: Ranking method to be used.
             type: Ranking method type. Use "Stock" or "ETF".
-            currency: Ranking method currency (e.g., "USD").
+            currency: Ranking method currency.
 
         Returns:
-            A dictionary containing the new ranking system's details.
+            An object containing the new ranking system's id.
 
         Examples:
             >>> client.rank_create(
@@ -506,17 +535,14 @@ class Client:
             ...     type='Stock',
             ...     currency='USD'
             ... )
-            {
-                'id': 98765,
-                'cost': 1,
-                'quotaRemaining': 45678
-            }
+            IdResult(id=98765)
         """
 
         return self._req_with_auth_fallback(
             method="POST",
             url=self._endpoint + RANK_CREATE,
             json={"name": name, "nodes": nodes, "currency": currency, "type": type, "rankingMethod": rankingMethod},
+            result_type=IdResult,
         )
 
     @overload
@@ -530,21 +556,20 @@ class Client:
             id: The unique identifier of the ranking system.
 
         Returns:
-            A dictionary containing the ranking system's details.
+            An object containing the ranking system's details.
 
         Examples:
             >>> client.rank_get(id=12345)
-            {
-                'name': 'My Ranking System',
-                'id': 12345,
-                'xml': '<RankingSystem>...</RankingSystem>',
-                'currency': 'USD',
-                'description': 'Ranking system description',
-                'rankingMethod': 1,
-                'type': 'Stock',
-                'groupUid': 100,
-                'resolveGroupUid': 200
-            }
+            RankInfoResult(
+                name='My Ranking System',
+                id=12345,
+                xml='<RankingSystem,...</RankingSystem>',
+                currency='USD',
+                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
+                type='Stock',
+                groupUid=100,
+                resolveGroupUid=200
+            )
         """
         ...
 
@@ -559,26 +584,27 @@ class Client:
             name: The name of the ranking system.
 
         Returns:
-            A dictionary containing the ranking system's details.
+            An object containing the ranking system's details.
 
         Examples:
             >>> client.rank_get(name='My Ranking System')
-            {
-                'name': 'My Ranking System',
-                'id': 12345,
-                'xml': '<RankingSystem>...</RankingSystem>',
-                'currency': 'USD',
-                'description': 'Ranking system description',
-                'rankingMethod': 1,
-                'type': 'Stock',
-                'groupUid': 100,
-                'resolveGroupUid': 200
-            }
+            RankInfoResult(
+                name='My Ranking System',
+                id=12345,
+                xml='<RankingSystem,...</RankingSystem>',
+                currency='USD',
+                rankingMethod=<RankingMethod.PERCENTILE_NA_NEGATIVE: 2>,
+                type='Stock',
+                groupUid=100,
+                resolveGroupUid=200
+            )
         """
         ...
 
-    def rank_get(self, *, id: Optional[int] = None, name: Optional[str] = None) -> RankInfoResult:
-        return self._req_with_auth_fallback(method="GET", url=self._endpoint + RANK_PATH, params={"id": id, "name": name})
+    def rank_get(self, *, id: int | None = None, name: str | None = None) -> RankInfoResult:
+        return self._req_with_auth_fallback(
+            method="GET", url=self._endpoint + RANK_PATH, params=[("id", id), ("name", name)], result_type=RankInfoResult
+        )
 
     def strategy(self, strategy_id: int):
         """
@@ -589,7 +615,7 @@ class Client:
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id))
 
-    def strategy_copy(self, id: int, name: str, type: Literal["PTF", "SIM"]) -> IdResult:
+    def strategy_copy(self, id: int, name: str, type: Literal["PTF", "SIM"] | None = None) -> IdResult:
         """
         Copy an existing strategy to a new strategy.
 
@@ -601,21 +627,20 @@ class Client:
             type: Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy.
 
         Returns:
-            A dictionary containing the new strategy's details.
+            An object containing the new strategy's id.
 
         Examples:
             >>> client.strategy_copy(123, 'Sim copy', 'SIM')
-            {
-                'id': 12345,
-                'cost': 1,
-                'quotaRemaining': 45678
-            }
+            IdResult(id=12345)
         """
         return self._req_with_auth_fallback(
-            method="POST", url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
+            method="POST",
+            url=self._endpoint + STRATEGY_COPY_PATH.substitute(id=id),
+            json={"name": name, "type": type},
+            result_type=IdResult,
         )
 
-    def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"]) -> IdResult:
+    def book_copy(self, id: int, name: str, type: Literal["BOOK", "BOOKSIM"] | None = None) -> IdResult:
         """
         Copy an existing book to a new book.
 
@@ -627,18 +652,14 @@ class Client:
             type: Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book.
 
         Returns:
-            A dictionary containing the new book's details.
+            An object containing the new book's id.
 
         Examples:
             >>> client.book_copy(123, 'Sim book copy', 'BOOKSIM')
-            {
-                'id': 12345,
-                'cost': 1,
-                'quotaRemaining': 45678
-            }
+            IdResult(id=12345)
         """
         return self._req_with_auth_fallback(
-            method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}
+            method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}, result_type=IdResult
         )
 
     def strategy_transactions(self, strategy_id: int, start: str, end: str, to_pandas=False):
@@ -653,12 +674,18 @@ class Client:
         ret = self._req_with_auth_fallback(
             method="GET", url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id), params=[("start", start), ("end", end)]
         )
-        return pandas.DataFrame(ret["trans"]) if to_pandas else ret
+
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["trans"])
+
+        return ret
 
     def strategy_transaction_import(
         self,
         strategy_id: int,
-        data: Union[str, IO[str]],
+        data: str | IO[str],
         content_type: Literal["text/csv", "text/tsv"] = "text/csv",
         update_existing=False,
         make_rebal_dt_curr=False,
@@ -686,7 +713,7 @@ class Client:
             headers={"Content-Type": content_type},
         )
 
-    def strategy_transaction_delete(self, strategy_id: int, params: List[int]):
+    def strategy_transaction_delete(self, strategy_id: int, params: list[int]):
         """
         Strategy transaction delete
         :param strategy_id:
@@ -697,7 +724,7 @@ class Client:
             method="DELETE", url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id), json=params
         )
 
-    def strategy_holdings(self, strategy_id: int, date: Optional[str] = None, to_pandas=False):
+    def strategy_holdings(self, strategy_id: int, date: str | None = None, to_pandas=False):
         """
         Strategy holdings
         :param strategy_id:
@@ -711,7 +738,12 @@ class Client:
             method="GET", url=self._endpoint + STRATEGY_HOLDINGS_PATH.substitute(id=strategy_id), params=get_params
         )
 
-        return pandas.DataFrame(ret["holdings"]) if to_pandas else ret
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["holdings"])
+
+        return ret
 
     def strategy_trading_system(self, strategy_id: int):
         """
@@ -789,39 +821,70 @@ class Client:
     def stock_factor_upload(
         self,
         factor_id: int,
-        data: Union[str, IO[str]],
-        column_separator: Union[str, None] = None,
-        existing_data: Union[str, None] = None,
-        date_format: Union[str, None] = None,
-        decimal_separator: Union[str, None] = None,
-        ignore_errors: Union[bool, None] = None,
-        ignore_duplicates: Union[bool, None] = None,
+        data: str | IO[str],
+        column_separator: Literal[",", ";", "\t"] = ",",
+        existing_data: Literal["overwrite", "skip", "delete"] = "overwrite",
+        date_format="yyyy-mm-dd",
+        decimal_separator: Literal[".", ","] = ".",
+        ignore_errors=False,
+        ignore_duplicates=False,
     ):
         """
-        Stock factor data upload
-        :param factor_id:
-        :param data:
-        :param column_separator: comma, semicolon or tab
-        :param existing_data: overwrite, skip or delete
-        :param date_format: dd for day, mm for month and yyyy for year, any separator allowed (defaults to yyyy-mm-dd)
-        :param decimal_separator: . or ,
-        :param ignore_errors:
-        :param ignore_duplicates:
-        :return:
+        Upload stock factor data.
+
+        Uploads delimited content to the specified stock factor.
+
+        The uploaded content must contain a header row.
+        Only the first three columns are processed and must contain ``date``, ``<identifier>``, and ``value``.
+
+        ``<identifier>`` may be one of ``id`` (Portfolio123 stock ID), ``ticker`` (Portfolio123 ticker), ``gvkey``, ``cik``, or ``figi``.
+
+        The ``value`` column may specify ``na``, ``nan``, or ``null`` (case-insensitive) to clear a prior value on an observation date.
+
+        Example input::
+
+            date,ticker,value
+            2026-01-31,AAPL:USA,1.25
+            2026-01-31,MSFT:USA,0.83
+            2026-02-28,MSFT:USA,na
+
+        Note that some types of identifiers may resolve to multiple stocks.
+        For example, the FIGI ``BBG001SG1LP6`` resolves to both ``UMC:USA`` and ``UMCB:DEU``.
+
+        Identifier resolution is performed at the time of the upload. If identifier relationships ever change or coverage expands,
+        the stock factor data will still reflect the original resolution.
+
+        Args:
+            factor_id: Unique identifier of the stock factor.
+            data: Delimited content string or file-like containing delimited content. Must not exceed 100 MB or 5 million lines.
+            column_separator: Separator character between columns. Defaults to comma.
+            existing_data: Policy for dealing with collisions against stored (date, stock ID) pairs. Defaults to ``overwrite``.
+                - ``overwrite``: Overwrite stored values.
+                - ``skip``: Retaine stored values.
+                - ``delete``: Clear before storing uploaded data.
+            date_format: Date format. Defaults to ``yyyy-mm-dd``.
+            decimal_separator: Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
+            ignore_errors: If ``True``, lines in the data with errors will be silently discarded.
+            ignore_duplicates: If ``True``, additional occurrences of a (date, identifier) pair in the data are skipped.
         """
-        get_params = []
-        if column_separator is not None:
-            get_params.append(("columnSeparator", column_separator))
-        if existing_data is not None:
-            get_params.append(("existingData", existing_data))
-        if date_format is not None:
-            get_params.append(("dateFormat", date_format))
-        if decimal_separator is not None:
-            get_params.append(("decimalSeparator", decimal_separator))
-        if ignore_errors is not None:
-            get_params.append(("onError", "continue" if ignore_errors else "stop"))
-        if ignore_duplicates is not None:
-            get_params.append(("onDuplicates", "continue" if ignore_duplicates else "stop"))
+
+        # COMPAT: column_separator originally accepted 'comma', 'semicolon', 'tab' which matches the API.
+        actual_column_separator: str = column_separator
+        if column_separator == ",":
+            actual_column_separator = "comma"
+        elif column_separator == ";":
+            actual_column_separator = "semicolon"
+        elif column_separator == "\t":
+            actual_column_separator = "tab"
+
+        get_params = [
+            ("columnSeparator", actual_column_separator),
+            ("existingData", existing_data),
+            ("dateFormat", date_format),
+            ("decimalSeparator", decimal_separator),
+            ("onError", "continue" if ignore_errors else "stop"),
+            ("onDuplicates", "continue" if ignore_duplicates else "stop"),
+        ]
         return self._req_with_auth_fallback(
             url=self._endpoint + STOCK_FACTOR_UPLOAD_PATH.substitute(id=factor_id), params=get_params, data=data
         )
@@ -832,7 +895,9 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params)
+        return self._req_with_auth_fallback(
+            url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params, result_type=StockFactorResult
+        )
 
     def stock_factor_delete(self, factor_id: int):
         """
@@ -845,39 +910,51 @@ class Client:
     def data_series_upload(
         self,
         series_id: int,
-        data: Union[str, IO[str]],
-        existing_data: Union[str, None] = None,
-        date_format: Union[str, None] = None,
-        decimal_separator: Union[str, None] = None,
-        ignore_errors: Union[bool, None] = None,
-        ignore_duplicates: Union[bool, None] = None,
-        contains_header_row: Union[bool, None] = None,
+        data: str | IO[str],
+        existing_data: Literal["overwrite", "skip", "delete"] = "overwrite",
+        date_format="yyyy-mm-dd",
+        decimal_separator: Literal[".", ","] = ".",
+        ignore_errors=False,
+        ignore_duplicates=False,
+        contains_header_row=True,
     ):
         """
-        Data series upload
-        :param series_id:
-        :param data:
-        :param existing_data: overwrite, skip or delete
-        :param date_format: dd for day, mm for month and yyyy for year, any separator allowed (defaults to yyyy-mm-dd)
-        :param decimal_separator: . or ,
-        :param ignore_errors:
-        :param ignore_duplicates:
-        :param contains_header_row:
-        :return:
+        Upload data series data.
+
+        Uploads delimited content to the specified data series.
+
+        The data must contain dates in the first column and values in the second column.
+        If the data includes a header row, the names are not processed.
+
+        The ``value`` column may specify ``na``, ``nan``, or ``null`` (case-insensitive) to clear a prior value on an observation date.
+
+        Example input::
+
+            date,value
+            2026-01-31,1.25
+            2026-02-28,na
+
+        Args:
+            series_id: Unique identifier of the data series.
+            data: Delimited content string or file-like containing delimited content. Must not exceed 100 MB.
+            existing_data: Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
+                - ``overwrite``: Overwrite stored values.
+                - ``skip``: Retaine stored values.
+                - ``delete``: Clear before storing uploaded data.
+            date_format: Date format. Defaults to ``yyyy-mm-dd``.
+            decimal_separator: Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
+            ignore_errors: If ``True``, lines in the data with errors will be silently discarded.
+            ignore_duplicates: If ``True``, additional occurrences of a date in the data are skipped.
+            contains_header_row: If ``True``, the first line of the uploaded data will be skipped.
         """
-        get_params = []
-        if existing_data is not None:
-            get_params.append(("existingData", existing_data))
-        if date_format is not None:
-            get_params.append(("dateFormat", date_format))
-        if decimal_separator is not None:
-            get_params.append(("decimalSeparator", decimal_separator))
-        if ignore_errors is not None:
-            get_params.append(("onError", "continue" if ignore_errors else "stop"))
-        if ignore_duplicates is not None:
-            get_params.append(("onDuplicates", "continue" if ignore_duplicates else "stop"))
-        if contains_header_row is not None:
-            get_params.append(("headerRow", contains_header_row))
+        get_params = [
+            ("existingData", existing_data),
+            ("dateFormat", date_format),
+            ("decimalSeparator", decimal_separator),
+            ("onError", "continue" if ignore_errors else "stop"),
+            ("onDuplicates", "continue" if ignore_duplicates else "stop"),
+            ("headerRow", contains_header_row),
+        ]
         return self._req_with_auth_fallback(
             url=self._endpoint + DATA_SERIES_UPLOAD_PATH.substitute(id=series_id), params=get_params, data=data
         )
@@ -888,7 +965,7 @@ class Client:
         :param params:
         :return:
         """
-        return self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params)
+        return self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params, result_type=DataSeriesResult)
 
     def data_series_delete(self, series_id: int):
         """
@@ -911,6 +988,8 @@ class Client:
         ret = self._req_with_auth_fallback(url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id), json=params)
 
         if to_pandas:
+            import pandas
+
             data = {"p123Uid": ret["p123Uids"], "ticker": ret["tickers"]}
             if "names" in ret:
                 data["name"] = ret["names"]
@@ -939,7 +1018,7 @@ class Client:
         """
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
-    def data_prices(self, identifier: Union[int, str], start: str, end: Optional[str], to_pandas=False):
+    def data_prices(self, identifier: int | str, start: str, end: str | None, to_pandas=False):
         """ """
         get_params = [("start", start)]
         if end is not None:
@@ -947,7 +1026,13 @@ class Client:
         ret = self._req_with_auth_fallback(
             method="GET", url=self._endpoint + DATA_PRICES_PATH.substitute(identifier=identifier), params=get_params
         )
-        return pandas.DataFrame(ret["prices"]) if to_pandas else ret
+
+        if to_pandas:
+            import pandas
+
+            return pandas.DataFrame(ret["prices"])
+
+        return ret
 
     @overload
     def stock_factor_info(self, *, id: int) -> StockFactorInfoResult:
@@ -958,15 +1043,11 @@ class Client:
             id: Stock factor ID.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(id=123)
-            {
-                factorId: 123,
-                name: 'Stock factor name',
-                description: 'Stock factor description'
-            }
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
@@ -979,15 +1060,11 @@ class Client:
             name: Stock factor name.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(name='Stock factor name')
-            {
-                factorId: 123,
-                name: 'Stock factor name',
-                description: 'Stock factor description'
-            }
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
@@ -1004,28 +1081,24 @@ class Client:
             factor_id: Stock factor ID.
 
         Returns:
-            A dictionary containing the basic stock factor info.
+            An object containing the basic stock factor info.
 
         Examples:
             >>> client.stock_factor_info(factor_id=123)
-            {
-                factorId: 123,
-                name: 'Stock factor name',
-                description: 'Stock factor description'
-            }
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
-    def stock_factor_info(
-        self, *, id: Optional[int] = None, factor_id: Optional[int] = None, name: Optional[str] = None
-    ) -> StockFactorInfoResult:
+    def stock_factor_info(self, *, id: int | None = None, factor_id: int | None = None, name: str | None = None) -> StockFactorInfoResult:
         if id is not None:
-            params = {"id": id}
+            params = [("id", id)]
         elif factor_id is not None:
-            params = {"id": factor_id}
+            params = [("id", factor_id)]
         else:
-            params = {"name": name}
-        return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params)
+            params = [("name", name)]
+        return self._req_with_auth_fallback(
+            method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params, result_type=StockFactorInfoResult
+        )
 
     @overload
     def data_series_info(self, *, id: int) -> DataSeriesInfoResult:
@@ -1036,15 +1109,11 @@ class Client:
             id: Data series ID.
 
         Returns:
-            A dictionary containing the basic data series info.
+            An object containing the basic data series info.
 
         Examples:
             >>> client.data_series_info(id=123)
-            {
-                dataSeriesId: 123,
-                name: 'Data series name',
-                description: 'Data series description'
-            }
+            DataSeriesInfoResult(dataSeriesId=123, name='Data series name')
         """
         ...
 
@@ -1057,21 +1126,20 @@ class Client:
             name: Data series name.
 
         Returns:
-            A dictionary containing the basic data series info.
+            An object containing the basic data series info.
 
         Examples:
             >>> client.data_series_info(name='Data series name')
-            {
-                dataSeriesId: 123,
-                name: 'Data series name',
-                description: 'Data series description'
-            }
+            DataSeriesInfoResult(dataSeriesId=123, name='Data series name')
         """
         ...
 
-    def data_series_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> DataSeriesInfoResult:
+    def data_series_info(self, *, id: int | None = None, name: str | None = None) -> DataSeriesInfoResult:
         return self._req_with_auth_fallback(
-            method="GET", url=self._endpoint + DATA_SERIES_INFO_PATH, params={"name": name} if id is None else {"id": id}
+            method="GET",
+            url=self._endpoint + DATA_SERIES_INFO_PATH,
+            params=[("name", name)] if id is None else [("id", id)],
+            result_type=DataSeriesInfoResult,
         )
 
     @overload
@@ -1083,15 +1151,11 @@ class Client:
             id: Strategy ID.
 
         Returns:
-            A dictionary containing the basic strategy info.
+            An object containing the basic strategy info.
 
         Examples:
             >>> client.strategy_info(id=123)
-            {
-                strategyId: 123,
-                name: 'Strategy name',
-                description: 'Strategy description'
-            }
+            StrategyInfoResult(strategyId=123, name='Strategy name')
         """
         ...
 
@@ -1104,21 +1168,20 @@ class Client:
             name: Strategy name.
 
         Returns:
-            A dictionary containing the basic strategy info.
+            An object containing the basic strategy info.
 
         Examples:
             >>> client.strategy_info(name='Strategy name')
-            {
-                strategyId: 123,
-                name: 'Strategy name',
-                description: 'Strategy description'
-            }
+            StrategyInfoResult(strategyId=123, name='Strategy name')
         """
         ...
 
-    def strategy_info(self, *, id: Optional[int] = None, name: Optional[str] = None) -> StrategyInfoResult:
+    def strategy_info(self, *, id: int | None = None, name: str | None = None) -> StrategyInfoResult:
         return self._req_with_auth_fallback(
-            method="GET", url=self._endpoint + STRATEGY_INFO_PATH, params={"name": name} if id is None else {"id": id}
+            method="GET",
+            url=self._endpoint + STRATEGY_INFO_PATH,
+            params=[("name", name)] if id is None else [("id", id)],
+            result_type=StrategyInfoResult,
         )
 
 
@@ -1140,4 +1203,4 @@ def req_with_retry(req: Callable[..., requests.Response], max_tries=5, **kwargs)
         tries += 1
         if tries >= max_tries:
             break
-    raise ClientException("Cannot connect to API", exception=exception)
+    raise ClientException("Cannot connect to API") from exception
