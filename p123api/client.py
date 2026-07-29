@@ -1210,7 +1210,10 @@ def req_with_retry(
                     try:
                         data.seek(0)
                     except Exception:
-                        data = data.read()
+                        if isinstance(data, RawIOBase):
+                            data = data.readall()
+                        else:
+                            data = data.read()
                 else:
                     data = data.read()
 
