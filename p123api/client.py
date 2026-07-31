@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from io import BufferedIOBase, RawIOBase
+import warnings
 import requests
 import time
 from string import Template
@@ -891,52 +892,69 @@ class Client:
             url=self._endpoint + STOCK_FACTOR_UPLOAD_PATH.substitute(id=factor_id), params=get_params, data=data
         )
 
+    @overload
+    @deprecated("Passing a params dict is deprecated. Please use named arguments.")
     def stock_factor_create_update(self, params: dict) -> StockFactorResult:
+        """
+        Stock factor create/update
+        """
+        ...
+
+    @overload
+    def stock_factor_create_update(
+        self,
+        *,
+        id: int | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        maxDays: int | None = None,
+        maxLookback: int | None = None,
+    ) -> StockFactorResult:
         """
         Creates or updates a stock factor.
 
-        Sends a request to create a new stock factor or update an existing one
-        using the provided parameter dictionary.
-
         Args:
-            params (dict): A dictionary containing the stock factor parameters.
-                Expected keys include:
-
-                - id (int, optional): The ID of the stock factor to update.
-                  Omit to create a new stock factor.
-
-                - name (str): Name of the stock factor (Required for creating
-                  a new stock factor).
-
-                - description (str, optional): Description of the stock factor.
-
-                - maxDays (int, optional): Controls how long a factor is valid.
-                  If a factor value is older than Max Days from an observation date,
-                  it will be set to N/A.
-
-                - maxLookBack (int, optional): Controls how much extra data is
-                  loaded for the analysis both past and future. This is an advanced
-                  setting to support the use of the FHist() function. If you do not
-                  use FHist() with your factor, set it to 0 so that no extra data
-                  is loaded.
+            id: The ID of the stock factor to update. Omit to create a new stock factor.
+            name: Name of the stock factor (Required for creating a new stock factor).
+            description: Description of the stock factor.
+            maxDays: Controls how long a factor is valid. If a factor value is older than Max Days from an observation date, it will be set to N/A.
+            maxLookback: Controls how much extra data is loaded for the analysis both past and future. This is an advanced setting to support the use of the FHist() function. If you do not use FHist() with your factor, set it to 0 so that no extra data is loaded.
 
         Returns:
-            StockFactorResult: An object containing the identifier (factorId) for the stock factor operation.
+            An object containing the identifier for the stock factor operation.
 
         Examples:
-            >>> params = {
-            ...     'name': 'My Custom Factor',
-            ...     'description': 'Tracks specific market conditions',
-            ...     'maxDays': 5,
-            ...     'maxLookBack': 0
-            ... }
+            >>> client.stock_factor_create_update(
+            ...     id=12345,
+            ...     name='My Custom Factor',
+            ...     description='Tracks specific market conditions',
+            ...     maxDays=5,
+            ...     maxLookback=0
+            ... )
             >>> client.stock_factor_create_update(params=params)
-            StockFactorResult(
-                factorId=98765
-            )
+            StockFactorResult(factorId=98765)
         """
+        ...
+
+    def stock_factor_create_update(
+        self,
+        params: dict | None = None,
+        *,
+        id: int | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        maxDays: int | None = None,
+        maxLookback: int | None = None,
+    ) -> StockFactorResult:
+
+        if params is not None:
+            payload = params
+            warnings.warn("Passing a params dict is deprecated. Please use named arguments.", category=DeprecationWarning, stacklevel=2)
+        else:
+            payload = {"id": id, "name": name, "description": description, "maxDays": maxDays, "maxLookback": maxLookback}
+
         return self._req_with_auth_fallback(
-            url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params, result_type=StockFactorResult
+            url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=payload, result_type=StockFactorResult
         )
 
     def stock_factor_delete(self, factor_id: int):
@@ -1109,33 +1127,28 @@ class Client:
         ...
 
     @overload
-    @deprecated("use overload accepting `id` parameter instead")
+    @deprecated("This overload is deprecated. Use overload accepting `id` parameter instead.")
     def stock_factor_info(self, *, factor_id: int) -> StockFactorInfoResult:
         """
         Retrieve basic stock factor info by ID.
-
-        Deprecated:
-            Use overload accepting `id` parameter instead.
-
-        Args:
-            factor_id: Stock factor ID.
-
-        Returns:
-            An object containing the basic stock factor info.
-
-        Examples:
-            >>> client.stock_factor_info(factor_id=123)
-            StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
 
     def stock_factor_info(self, *, id: int | None = None, factor_id: int | None = None, name: str | None = None) -> StockFactorInfoResult:
-        if id is not None:
-            params = [("id", id)]
-        elif factor_id is not None:
-            params = [("id", factor_id)]
-        else:
-            params = [("name", name)]
+
+        match (id, factor_id, name):
+            case (_, None, None) if id is not None:
+                params = [("id", id)]
+            case (None, None, _) if name is not None:
+                params = [("name", name)]
+            case (None, _, None) if factor_id is not None:
+                warnings.warn(
+                    "This overload is deprecated. Use overload accepting `id` parameter instead.", category=DeprecationWarning, stacklevel=2
+                )
+                params = [("id", factor_id)]
+            case _:
+                raise TypeError("Invalid arguments")
+
         return self._req_with_auth_fallback(
             method="GET", url=self._endpoint + STOCK_FACTOR_INFO_PATH, params=params, result_type=StockFactorInfoResult
         )
