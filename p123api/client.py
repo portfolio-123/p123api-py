@@ -893,9 +893,47 @@ class Client:
 
     def stock_factor_create_update(self, params: dict) -> StockFactorResult:
         """
-        Stock factor create/update
-        :param params:
-        :return:
+        Creates or updates a stock factor.
+
+        Sends a request to create a new stock factor or update an existing one
+        using the provided parameter dictionary.
+
+        Args:
+            params (dict): A dictionary containing the stock factor parameters.
+                Expected keys include:
+
+                - id (int, optional): The ID of the stock factor to update.
+                  Omit to create a new stock factor.
+
+                - name (str): Name of the stock factor (Required for creating
+                  a new stock factor).
+
+                - description (str, optional): Description of the stock factor.
+
+                - maxDays (int, optional): Controls how long a factor is valid.
+                  If a factor value is older than Max Days from an observation date,
+                  it will be set to N/A.
+
+                - maxLookBack (int, optional): Controls how much extra data is
+                  loaded for the analysis both past and future. This is an advanced
+                  setting to support the use of the FHist() function. If you do not
+                  use FHist() with your factor, set it to 0 so that no extra data
+                  is loaded.
+
+        Returns:
+            StockFactorResult: An object containing the identifier (factorId) for the stock factor operation.
+
+        Examples:
+            >>> params = {
+            ...     'name': 'My Custom Factor',
+            ...     'description': 'Tracks specific market conditions',
+            ...     'maxDays': 5,
+            ...     'maxLookBack': 0
+            ... }
+            >>> client.stock_factor_create_update(params=params)
+            StockFactorResult(
+                factorId=98765
+            )
         """
         return self._req_with_auth_fallback(
             url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params, result_type=StockFactorResult
