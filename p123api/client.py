@@ -902,13 +902,7 @@ class Client:
 
     @overload
     def stock_factor_create_update(
-        self,
-        *,
-        id: int | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        maxDays: int | None = None,
-        maxLookback: int | None = None,
+        self, *, id: int | None = None, name: str | None = None, maxDays: int | None = None, maxLookback: int | None = None
     ) -> StockFactorResult:
         """
         Creates or updates a stock factor.
@@ -916,7 +910,6 @@ class Client:
         Args:
             id: The ID of the stock factor to update. Omit to create a new stock factor.
             name: Name of the stock factor (Required for creating a new stock factor).
-            description: Description of the stock factor.
             maxDays: Controls how long a factor is valid. If a factor value is older than Max Days from an observation date, it will be set to N/A.
             maxLookback: Controls how much extra data is loaded for the analysis both past and future. This is an advanced setting to support the use of the FHist() function. If you do not use FHist() with your factor, set it to 0 so that no extra data is loaded.
 
@@ -927,7 +920,6 @@ class Client:
             >>> client.stock_factor_create_update(
             ...     id=12345,
             ...     name='My Custom Factor',
-            ...     description='Tracks specific market conditions',
             ...     maxDays=5,
             ...     maxLookback=0
             ... )
@@ -942,7 +934,6 @@ class Client:
         *,
         id: int | None = None,
         name: str | None = None,
-        description: str | None = None,
         maxDays: int | None = None,
         maxLookback: int | None = None,
     ) -> StockFactorResult:
@@ -951,7 +942,7 @@ class Client:
             payload = params
             warnings.warn("Passing a params dict is deprecated. Please use named arguments.", category=DeprecationWarning, stacklevel=2)
         else:
-            payload = {"id": id, "name": name, "description": description, "maxDays": maxDays, "maxLookback": maxLookback}
+            payload = {"id": id, "name": name, "maxDays": maxDays, "maxLookback": maxLookback}
 
         return self._req_with_auth_fallback(
             url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=payload, result_type=StockFactorResult
