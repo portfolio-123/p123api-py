@@ -1,9 +1,9 @@
 from collections.abc import Callable
-from io import BufferedIOBase, RawIOBase
+from io import BufferedIOBase, IOBase, RawIOBase
 import requests
 import time
 from string import Template
-from typing import IO, Any, Literal, overload
+from typing import IO, Any, Literal, cast, overload
 from typing_extensions import deprecated
 
 from p123api.types import (
@@ -1200,9 +1200,30 @@ def req_with_retry(
     headers: Any = None,
 ):
     tries = 0
+    pos = None
+    match data:
+        case str() | bytes() | None:
+            pass
+        case RawIOBase():
+            if data.seekable():
+                pos = data.tell()
+            else:
+                data = data.read()
+        case BufferedIOBase():
+            if data.seekable():
+                pos = data.tell()
+            else:
+                chunks = []
+                while chunk := data.read():
+                    chunks.append(chunk)
+                data = b"".join(chunks)
+        case _:
+            data = data.read()
+
     while True:
         if tries > 0:
             time.sleep(2 * tries)
+
         try:
 
             if data and not isinstance(data, (str, bytes)):
@@ -1232,4 +1253,6 @@ def req_with_retry(
         tries += 1
         if tries >= max_tries:
             break
+        if pos is not None:
+            cast(IOBase, data).seek(pos)
     raise ClientException("Cannot connect to API") from exception
