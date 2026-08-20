@@ -338,9 +338,37 @@ class Client:
 
     def universe_update(self, params: dict):
         """
-        Universe update
-        :param params:
-        :return:
+        Create or update a universe named 'ApiUniverse' that can be used in other endpoints.<br>
+        WARNING: Since ApiUniverse is an actual custom universe in your account, calling this endpoint while
+        there are ongoing requests using that universe will yield unexpected results.
+
+        Args:
+            params: A dictionary containing the universe configuration.
+                Expected keys include::
+
+                    - type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
+                    - rules (list[str]): Required. A list of strings defining the universe rules.
+                    - startingUniverse (str): Optional. The starting universe to build upon.
+                    - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY').
+                      Defaults to 'USD'.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> params = {
+            ...     "type": "Stock",
+            ...     "rules": [
+            ...         "string"
+            ...     ],
+            ...     "startingUniverse": "string",
+            ...     "currency": "USD"
+            ... }
+            >>> client.universe_update(params)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1
+            }
         """
         return self._req_with_auth_fallback(url=self._endpoint + UNIVERSE_PATH, json=params)
 
@@ -354,10 +382,80 @@ class Client:
 
     def data(self, params: dict, to_pandas=False):
         """
-        Data
-        :param params:
-        :param to_pandas:
-        :return:
+        Retrieves time-series data for specified formulas and identifiers.
+
+        Args:
+            params (dict): A dictionary of parameters for the data request.
+                Expected keys include::
+
+                    - formulas (list of str): Required. Array of formulas to evaluate.
+                    - startDt (str): Required. Start date (yyyy-mm-dd).
+                    - endDt (str): End date (yyyy-mm-dd).
+                    - p123Uids (list of int): Array of P123 UIDs (maximum 100).
+                    - tickers (list of str): Array of tickers (maximum 100).
+                    - gvkeys (list of str): Array of GVKeys (maximum 100).
+                    - ciks (list of str): Array of CIKs (maximum 100).
+                    - figis (list of str): Array of FIGIs (maximum 100).
+                    - frequency (str): Retrieval frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                      'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                      'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every Week'.
+                    - region (str): Region scope ('United States', 'Canada', 'North America', 'Europe', 'North Atlantic').
+                      Defaults to 'United States'.
+                    - ignoreErrors (bool): If True, ignores invalid/ambiguous P123 UIDs, tickers, GVKeys, CIKs, or FIGIs instead of failing. Defaults to True.
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to Complete.
+                    - precision (int): Fixed precision digits. Defaults to 2.
+                    - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY').
+                      Defaults to 'USD'.
+                    - benchmark (str): Benchmark ticker.
+                    - includeNames (bool): Whether to include company names/tickers in the output.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and the requested
+            data items grouped by identifier, containing their ticker and respective data series (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "precision": 2,
+            ...     "currency": "USD",
+            ...     "benchmark": "string",
+            ...     "formulas": ["string"],
+            ...     "includeNames": True,
+            ...     "p123Uids": [1073741824],
+            ...     "tickers": ["string"],
+            ...     "gvkeys": ["string"],
+            ...     "ciks": ["string"],
+            ...     "figis": ["string"],
+            ...     "startDt": "2026-06-24",
+            ...     "endDt": "2026-06-24",
+            ...     "frequency": "Every Week",
+            ...     "region": "United States",
+            ...     "ignoreErrors": True
+            ... }
+            >>> client.data(params)
+            {
+                'cost': 1,
+                'quotaRemaining': 1533,
+                'items': {
+                    '4737': {
+                        'ticker': 'IBM',
+                        'series': [
+                            [115457.36, 113310.56, '...'],
+                            [6777, 6777, '...'],
+                            '...'
+                        ]
+                    },
+                    '4773': {
+                        'ticker': 'INTC',
+                        'series': [
+                            [238180.8, 239253.3, '...'],
+                            [11356, 11356, '...'],
+                            '...'
+                        ]
+                    },
+                    '...': {}
+                }
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_PATH, json=params)
 
@@ -392,10 +490,72 @@ class Client:
 
     def data_universe(self, params: dict, to_pandas=False):
         """
-        Universe data
-        :param params:
-        :param to_pandas:
-        :return:
+        Retrieves universe data for specified formulas and parameters.
+
+        Args:
+            params (dict): A dictionary of parameters for the data request.
+                Expected keys include::
+
+                    - universe (int or str): Required. The universe ID or name (use 'ApiUniverse' for temporary ones).
+                    - formulas (list of str): Required. Array of formulas to evaluate.
+                    - type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
+                    - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY'). Defaults to 'USD'.
+                    - benchmark (str): Benchmark ticker.
+                    - precision (int or None): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
+                    - asOfDt (str): As of date (yyyy-mm-dd).
+                    - asOfDts (list of str): Array of as of dates (yyyy-mm-dd).
+                    - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to Complete.
+                    - includeNames (bool): Whether to include company names in the output.
+                    - preproc (dict): Preprocessor configuration dictionary, containing::
+                        - scaling (str): Required. Scaling method ('normal', 'rank', 'minmax').
+                        - naFill (bool): Set NAs to the middle values. Defaults to False.
+                        - scope (str): Preprocessor scope ('dataset', 'training', 'date'). Defaults to 'date'.
+                        - trimPct (float): Trim percentage. Defaults to 0.
+                        - outliers (bool): Clip outliers. Defaults to False.
+                        - outlierLimit (float): Used for normal scaling. Defaults to 0.
+                        - mlTrainingEnd (str): End date for scaling when scope='dataset'.
+                        - excludedFormulas (list of str): Formulas excluded (data license required for non-technical factors).
+
+            to_pandas (bool): If True, converts the data, tickers, and names arrays into a pandas DataFrame.
+
+        Returns:
+            dict or pandas.DataFrame: A dictionary containing the operation's cost,
+            remaining quota, date, and parallel arrays of P123 UIDs, tickers, names,
+            and the requested data (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "formulas": [
+            ...         "string"
+            ...     ],
+            ...     "includeNames": True,
+            ...     "precision": 2,
+            ...     "currency": "USD",
+            ...     "benchmark": "string",
+            ...     "type": "ETF",
+            ...     "universe": 1073741824,
+            ...     "asOfDt": "2026-06-24",
+            ...     "asOfDts": [
+            ...         "2026-06-24"
+            ...     ],
+            ...     "figi": "Share Class",
+            ...     "preproc": {
+            ...         "scaling": "normal"
+            ...     }
+            ... }
+            >>> client.data_universe(params, to_pandas=False)
+            {
+                'cost': 0.1,
+                'quotaRemaining': 0.1,
+                'dt': '2026-06-24',
+                'p123Uids': [1073741824],
+                'tickers': ['string'],
+                'names': ['string'],
+                'data': [[0.1]],
+                'figi': ['string']
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_UNIVERSE_PATH, json=params)
 
@@ -520,7 +680,7 @@ class Client:
         Args:
             name: Ranking system name.
             nodes: Ranking system nodes XML.
-            rankingMethod: Ranking method to be used.
+            rankingMeth    thod to be used.
             type: Ranking method type. Use "Stock" or "ETF".
             currency: Ranking method currency.
 
@@ -980,11 +1140,50 @@ class Client:
 
     def aifactor_predict(self, predictor_id: int, params={}, to_pandas=False):
         """
-        AI Factor predict
-        :param predictor_id:
-        :param params:
-        :return:
+        Retrieves predictions for a trained AI Factor predictor.
+
+        Args:
+            predictor_id (int): Required. The ID of the trained predictor.
+            params (dict, optional): A dictionary of parameters for the prediction request.
+                Expected keys include::
+
+                    - precision (int): Fixed precision digits (2 to 6). Defaults to 2.
+
+                    - universe (int or str): Universe name or ID.
+
+                    - asOfDt (str): As of date (yyyy-mm-dd).
+
+                    - includeNames (bool): Whether to include company names.
+
+                    - includeFeatures (bool): Whether to include features.
+
+                    - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+            to_pandas (bool): If True, converts the resulting arrays into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, date, and parallel
+            arrays for P123 UIDs, tickers, and predictions (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "precision": 2,
+            ...     "universe": 1073741824,
+            ...     "asOfDt": "2026-06-25",
+            ...     "includeNames": True,
+            ...     "includeFeatures": True,
+            ...     "figi": "Share Class"
+            ... }
+            >>> client.aifactor_predict(1073741824, params, to_pandas=False)
+            {
+                'cost': 1,
+                'quotaRemaining': 1533,
+                'dt': '2024-10-04',
+                'p123Uids': [774, 4737],
+                'tickers': ['AAPL:USA', 'IBM:USA'],
+                'predictions': [0.12, 0.34]
+            }
         """
+
         ret = self._req_with_auth_fallback(url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id), json=params)
 
         if to_pandas:
@@ -1019,7 +1218,51 @@ class Client:
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
     def data_prices(self, identifier: int | str, start: str, end: str | None, to_pandas=False):
-        """ """
+        """
+        Retrieves historical price data for a specific security by UID or ticker.
+
+        Tickers without a country code default to ':USA' (e.g., 'MSFT' becomes 'MSFT:USA').
+        Numeric identifiers are treated as P123 UIDs (e.g., '955' or '955:HKG').
+
+        Args:
+            identifier (int or str): Required. Security identifier (UID or ticker with optional country).
+            start (str): Required. Start date (inclusive) in 'yyyy-mm-dd' format.
+            end (str, optional): End date (inclusive) in 'yyyy-mm-dd' format. If None, defaults to the current date.
+            to_pandas (bool): If True, converts the prices list into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, security information,
+            and a list of historical price records (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> client.data_prices(identifier="MSFT", start="2025-01-03", end="2025-05-31", to_pandas=False)
+            {
+                'cost': 1,
+                'quotaRemaining': 1499,
+                'security': {
+                    'p123Uid': 5881,
+                    'ticker': 'MSFT:USA'
+                },
+                'prices': [
+                    {
+                        'date': '2025-01-03',
+                        'open': 150.25,
+                        'high': 152.3,
+                        'low': 149.8,
+                        'close': 152.35,
+                        'vol': 25678900
+                    },
+                    {
+                        'date': '2025-05-31',
+                        'open': 152.5,
+                        'high': 153.8,
+                        'low': 151.2,
+                        'close': 153.25,
+                        'vol': 24135600
+                    }
+                ]
+            }
+        """
         get_params = [("start", start)]
         if end is not None:
             get_params.append(("end", end))
