@@ -349,7 +349,7 @@ class Client:
         there are ongoing requests using that universe will yield unexpected results.
 
         Args:
-            params: A dictionary containing the universe configuration.
+            params (dict[str, Any]): A dictionary containing the universe configuration.
                 Expected keys include::
 
                     - type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
@@ -385,7 +385,7 @@ class Client:
         Retrieves time-series data for specified formulas and identifiers.
 
         Args:
-            params (dict): A dictionary of parameters for the data request.
+            params (dict[str, Any]): A dictionary of parameters for the data request.
                 Expected keys include::
 
                     - formulas (list[str]): Required. Array of formulas to evaluate.
@@ -494,7 +494,7 @@ class Client:
         Retrieves universe data for specified formulas and parameters.
 
         Args:
-            params (dict): A dictionary of parameters for the data request.
+            params (dict[str, Any]): A dictionary of parameters for the data request.
                 Expected keys include::
 
                     - universe (int | str): Required. The universe ID or name (use 'ApiUniverse' for temporary ones).
@@ -508,7 +508,7 @@ class Client:
                     - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to Complete.
                     - includeNames (bool): Whether to include company names in the output.
-                    - preproc (dict): Preprocessor configuration dictionary, containing::
+                    - preproc (dict[str, Any]): Preprocessor configuration dictionary, containing::
                         - scaling (str): Required. Scaling method ('normal', 'rank', 'minmax').
                         - naFill (bool): Set NAs to the middle values. Defaults to False.
                         - scope (str): Preprocessor scope ('dataset', 'training', 'date'). Defaults to 'date'.
@@ -1169,7 +1169,7 @@ class Client:
 
         Args:
             predictor_id (int): Required. The ID of the trained predictor.
-            params (dict): A dictionary of parameters for the prediction request.
+            params (dict[str, Any]): A dictionary of parameters for the prediction request.
                 Expected keys include::
 
                     - precision (int): Fixed precision digits (2 to 6). Defaults to 2.
