@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 import requests
 import time
 from string import Template
-from typing import IO, Any, Literal, overload
+from typing import Any, IO, Literal, TYPE_CHECKING, overload
 from typing_extensions import deprecated
+
+if TYPE_CHECKING:
+    import pandas  # type: ignore[import-not-found]
+
 
 from p123api.types import (
     Currency,
@@ -336,7 +342,7 @@ class Client:
 
         return ret
 
-    def universe_update(self, params: dict):
+    def universe_update(self, params: dict) -> None:
         """
         Create or update a universe named 'ApiUniverse' that can be used in other endpoints.<br>
         WARNING: Since ApiUniverse is an actual custom universe in your account, calling this endpoint while
@@ -352,9 +358,6 @@ class Client:
                     - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY').
                       Defaults to 'USD'.
 
-        Returns:
-            A dictionary containing the operation's cost and remaining quota.
-
         Examples:
             >>> params = {
             ...     "type": "Stock",
@@ -365,10 +368,7 @@ class Client:
             ...     "startingUniverse": "ALLFUND"
             ... }
             >>> client.universe_update(params)
-            {
-                'cost': 0.1,
-                'quotaRemaining': 0.1
-            }
+            None
         """
         return self._req_with_auth_fallback(url=self._endpoint + UNIVERSE_PATH, json=params)
 
@@ -380,7 +380,7 @@ class Client:
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PATH, json=params)
 
-    def data(self, params: dict, to_pandas=False):
+    def data(self, params: dict, to_pandas=False) -> dict[str, Any] | pandas.DataFrame:
         """
         Retrieves time-series data for specified formulas and identifiers.
 
@@ -410,8 +410,8 @@ class Client:
                     - includeNames (bool): Whether to include company names/tickers in the output.
 
         Returns:
-            A dictionary containing the operation's cost, remaining quota, and the requested
-            data items grouped by identifier, containing their ticker and respective data series (or a DataFrame if to_pandas is True).
+            A dictionary containing the requested data items grouped by identifier, containing their ticker
+            and respective data series (or a DataFrame if to_pandas is True).
 
         Examples:
             >>> params = {
@@ -422,7 +422,6 @@ class Client:
             ...     "formulas": ["close(0)", "peg"],
             ...     "includeNames": True,
             ...     "tickers": ["IBM"],
-            ...     "figis":  ["BBG000BLNQ16"],
             ...     "startDt": "2025-02-01",
             ...     "endDt": "2026-06-24",
             ...     "frequency": "Every Week",
@@ -431,8 +430,6 @@ class Client:
             ... }
             >>> client.data(params)
             {
-                "cost": 1,
-                "quotaRemaining": 50001,
                 "dates": [
                     "2025-02-01",
                     "2025-02-08",
@@ -492,7 +489,7 @@ class Client:
 
         return ret
 
-    def data_universe(self, params: dict, to_pandas=False):
+    def data_universe(self, params: dict, to_pandas=False) -> dict[str, Any] | pandas.DataFrame:
         """
         Retrieves universe data for specified formulas and parameters.
 
@@ -524,9 +521,8 @@ class Client:
             to_pandas (bool): If True, converts the data, tickers, and names arrays into a pandas DataFrame.
 
         Returns:
-            dict | pandas.DataFrame: A dictionary containing the operation's cost,
-              remaining quota, date, and parallel arrays of P123 UIDs, tickers, names, and
-                the requested data (or a DataFrame if to_pandas is True).
+            A dictionary containing the date and parallel arrays of P123 UIDs, tickers, names, and
+            the requested data (or a DataFrame if to_pandas is True).
 
         Examples:
             >>> params = {
@@ -551,8 +547,6 @@ class Client:
             ... }
             >>> client.data_universe(params, to_pandas=False)
             {
-                "cost": 1,
-                "quotaRemaining": 50007,
                 "dt": "2024-07-01",
                 "p123Uids": [
                     159,
@@ -1169,7 +1163,7 @@ class Client:
     def get_api_id(self):
         return self._auth_params["apiId"]
 
-    def aifactor_predict(self, predictor_id: int, params={}, to_pandas=False):
+    def aifactor_predict(self, predictor_id: int, params={}, to_pandas=False) -> dict[str, Any] | pandas.DataFrame:
         """
         Retrieves predictions for a trained AI Factor predictor.
 
@@ -1187,8 +1181,8 @@ class Client:
             to_pandas (bool): If True, converts the resulting arrays into a pandas DataFrame. Defaults to False.
 
         Returns:
-            A dictionary containing the operation's cost, remaining quota, date, and parallel
-            arrays for P123 UIDs, tickers, and predictions (or a DataFrame if to_pandas is True).
+            A dictionary containing the date and parallel arrays for P123 UIDs, tickers,
+            and predictions (or a DataFrame if to_pandas is True).
 
         Examples:
             >>> params = {
@@ -1201,8 +1195,6 @@ class Client:
             ... }
             >>> client.aifactor_predict(217945, params, to_pandas=False)
             {
-                'cost': 1,
-                'quotaRemaining': 1533,
                 'dt': '2024-10-04',
                 'p123Uids': [774, 4737],
                 'tickers': ['AAPL:USA', 'IBM:USA'],
@@ -1257,14 +1249,11 @@ class Client:
             to_pandas (bool): If True, converts the prices list into a pandas DataFrame. Defaults to False.
 
         Returns:
-            A dictionary containing the operation's cost, remaining quota, security information,
-            and a list of historical price records (or a DataFrame if to_pandas is True).
+            A dictionary containing the security information and a list of historical price records (or a DataFrame if to_pandas is True).
 
         Examples:
             >>> client.data_prices(identifier="MSFT", start="2025-01-03", end="2025-05-31")
             {
-                'cost': 1,
-                'quotaRemaining': 1499,
                 'security': {
                     'p123Uid': 5881,
                     'ticker': 'MSFT:USA'
