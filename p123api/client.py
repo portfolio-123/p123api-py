@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 import requests
 import time
 from string import Template
-from typing import IO, Any, Literal, overload
+from typing import Any, IO, Literal, TYPE_CHECKING, overload
 from typing_extensions import deprecated
+
+if TYPE_CHECKING:
+    import pandas  # type: ignore[import-not-found]
+
 
 from p123api.types import (
     Currency,
@@ -336,11 +342,33 @@ class Client:
 
         return ret
 
-    def universe_update(self, params: dict):
+    def universe_update(self, params: dict) -> None:
         """
-        Universe update
-        :param params:
-        :return:
+        Create or update a universe named 'ApiUniverse' that can be used in other endpoints.<br>
+        WARNING: Since ApiUniverse is an actual custom universe in your account, calling this endpoint while
+        there are ongoing requests using that universe will yield unexpected results.
+
+        Args:
+            params (dict[str, Any]): A dictionary containing the universe configuration.
+                Expected keys include::
+
+                    - type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
+                    - rules (list[str]): Required. A list of strings defining the universe rules.
+                    - startingUniverse (str): Optional. The starting universe to build upon.
+                    - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY').
+                      Defaults to 'USD'.
+
+        Examples:
+            >>> params = {
+            ...     "type": "Stock",
+            ...     "rules": [
+            ...         "Price > 1"
+            ...     ],
+            ...     "currency": "USD",
+            ...     "startingUniverse": "ALLFUND"
+            ... }
+            >>> client.universe_update(params)
+            None
         """
         return self._req_with_auth_fallback(url=self._endpoint + UNIVERSE_PATH, json=params)
 
@@ -352,12 +380,83 @@ class Client:
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PATH, json=params)
 
-    def data(self, params: dict, to_pandas=False):
+    def data(self, params: dict, to_pandas=False) -> dict[str, Any] | pandas.DataFrame:
         """
-        Data
-        :param params:
-        :param to_pandas:
-        :return:
+        Retrieves time-series data for specified formulas and identifiers.
+
+        Args:
+            params (dict[str, Any]): A dictionary of parameters for the data request.
+                Expected keys include::
+
+                    - formulas (list[str]): Required. Array of formulas to evaluate.
+                    - startDt (str): Required. Start date (yyyy-mm-dd).
+                    - endDt (str): End date (yyyy-mm-dd).
+                    - p123Uids (list[int]): Array of P123 UIDs (maximum 100).
+                    - tickers (list[str]): Array of tickers (maximum 100).
+                    - gvkeys (list[str]): Array of GVKeys (maximum 100).
+                    - ciks (list[str]): Array of CIKs (maximum 100).
+                    - figis (list[str]): Array of FIGIs (maximum 100).
+                    - frequency (str): Retrieval frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                      'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                      'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every Week'.
+                    - region (str): Region scope ('United States', 'Canada', 'North America', 'Europe', 'North Atlantic').
+                      Defaults to 'United States'.
+                    - ignoreErrors (bool): If True, ignores invalid/ambiguous P123 UIDs, tickers, GVKeys, CIKs, or FIGIs instead of failing. Defaults to True.
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to Complete.
+                    - precision (int): Fixed precision digits. Defaults to 2.
+                    - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY').
+                      Defaults to 'USD'.
+                    - benchmark (str): Benchmark ticker.
+                    - includeNames (bool): Whether to include company names/tickers in the output.
+
+        Returns:
+            A dictionary containing the requested data items grouped by identifier, containing their ticker
+            and respective data series (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "precision": 2,
+            ...     "currency": "USD",
+            ...     "benchmark": "SPY",
+            ...     "formulas": ["close(0)", "peg"],
+            ...     "includeNames": True,
+            ...     "tickers": ["IBM"],
+            ...     "startDt": "2025-02-01",
+            ...     "endDt": "2026-06-24",
+            ...     "frequency": "Every Week",
+            ...     "region": "United States",
+            ...     "ignoreErrors": True
+            ... }
+            >>> client.data(params)
+            {
+                "dates": [
+                    "2025-02-01",
+                    "2025-02-08",
+                    "2025-02-15",
+                    ...
+                ],
+                "items": {
+                    "4737": {
+                        "ticker": "IBM",
+                        "figi": "BBG000BLNQ16",
+                        "series": [
+                            [
+                                244.283,
+                                241.073,
+                                251.277,
+                                ...
+                            ],
+                            [
+                                5.043,
+                                4.967,
+                                5.143,
+                                ...
+                            ]
+                        ]
+                    }
+                }
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_PATH, json=params)
 
@@ -390,12 +489,98 @@ class Client:
 
         return ret
 
-    def data_universe(self, params: dict, to_pandas=False):
+    def data_universe(self, params: dict, to_pandas=False) -> dict[str, Any] | pandas.DataFrame:
         """
-        Universe data
-        :param params:
-        :param to_pandas:
-        :return:
+        Retrieves universe data for specified formulas and parameters.
+
+        Args:
+            params (dict[str, Any]): A dictionary of parameters for the data request.
+                Expected keys include::
+
+                    - universe (int | str): Required. The universe ID or name (use 'ApiUniverse' for temporary ones).
+                    - formulas (list[str]): Required. Array of formulas to evaluate.
+                    - type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
+                    - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY'). Defaults to 'USD'.
+                    - benchmark (str): Benchmark ticker.
+                    - precision (int or None): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
+                    - asOfDt (str): As of date (yyyy-mm-dd).
+                    - asOfDts (list[str]): Array of as of dates (yyyy-mm-dd).
+                    - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to Complete.
+                    - includeNames (bool): Whether to include company names in the output.
+                    - preproc (dict[str, Any]): Preprocessor configuration dictionary, containing::
+                        - scaling (str): Required. Scaling method ('normal', 'rank', 'minmax').
+                        - naFill (bool): Set NAs to the middle values. Defaults to False.
+                        - scope (str): Preprocessor scope ('dataset', 'training', 'date'). Defaults to 'date'.
+                        - trimPct (float): Trim percentage. Defaults to 0.
+                        - outliers (bool): Clip outliers. Defaults to False.
+                        - outlierLimit (float): Used for normal scaling. Defaults to 0.
+                        - mlTrainingEnd (str): End date for scaling when scope='dataset'.
+                        - excludedFormulas (list[str]): Formulas excluded (data license required for non-technical factors).
+
+            to_pandas (bool): If True, converts the data, tickers, and names arrays into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the date and parallel arrays of P123 UIDs, tickers, names, and
+            the requested data (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "formulas": [
+            ...         "close(0)"
+            ...     ],
+            ...     "includeNames": True,
+            ...     "precision": 2,
+            ...     "currency": "USD",
+            ...     "benchmark": "SPY",
+            ...     "type": "ETF",
+            ...     "universe": "Prussell 2000",
+            ...     "asOfDt": "2026-06-24",
+            ...     "asOfDts": [
+            ...         "2026-06-24"
+            ...     ],
+            ...     "figi": "Share Class",
+            ...     "preproc": {
+            ...         "scaling": "normal"
+            ...     }
+            ... }
+            >>> client.data_universe(params, to_pandas=False)
+            {
+                "dt": "2024-07-01",
+                "p123Uids": [
+                    159,
+                    115627,
+                    26968,
+                    ...
+                ],
+                "tickers": [
+                    "RAMP",
+                    "BHVN",
+                    "AROC",
+                    ...
+                ],
+                "data": [
+                    [
+                        30.94,
+                        34.71,
+                        20.22,
+                        ...
+                    ]
+                ],
+                "names": [
+                    "LiveRamp Holdings, Inc.",
+                    "Biohaven Ltd.",
+                    "Archrock, Inc.",
+                    ...
+                ],
+                "figi": [
+                    "BBG001S5NCJ3",
+                    "BBG017BXV3R8",
+                    "BBG001SVDK72"
+                    ...
+                ]
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_UNIVERSE_PATH, json=params)
 
@@ -978,13 +1163,45 @@ class Client:
     def get_api_id(self):
         return self._auth_params["apiId"]
 
-    def aifactor_predict(self, predictor_id: int, params={}, to_pandas=False):
+    def aifactor_predict(self, predictor_id: int, params={}, to_pandas=False) -> dict[str, Any] | pandas.DataFrame:
         """
-        AI Factor predict
-        :param predictor_id:
-        :param params:
-        :return:
+        Retrieves predictions for a trained AI Factor predictor.
+
+        Args:
+            predictor_id (int): Required. The ID of the trained predictor.
+            params (dict[str, Any]): A dictionary of parameters for the prediction request.
+                Expected keys include::
+
+                    - precision (int): Fixed precision digits (2 to 6). Defaults to 2.
+                    - universe (int | str): Universe name or ID.
+                    - asOfDt (str): As of date (yyyy-mm-dd).
+                    - includeNames (bool): Whether to include company names.
+                    - includeFeatures (bool): Whether to include features.
+                    - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+            to_pandas (bool): If True, converts the resulting arrays into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the date and parallel arrays for P123 UIDs, tickers,
+            and predictions (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "precision": 2,
+            ...     "universe": "Prussell 2000",
+            ...     "asOfDt": "2026-06-25",
+            ...     "includeNames": True,
+            ...     "includeFeatures": True,
+            ...     "figi": "Share Class"
+            ... }
+            >>> client.aifactor_predict(217945, params, to_pandas=False)
+            {
+                'dt': '2024-10-04',
+                'p123Uids': [774, 4737],
+                'tickers': ['AAPL:USA', 'IBM:USA'],
+                'predictions': [0.12, 0.34]
+            }
         """
+
         ret = self._req_with_auth_fallback(url=self._endpoint + AIFACTOR_PREDICT_PATH.substitute(id=predictor_id), json=params)
 
         if to_pandas:
@@ -1019,7 +1236,48 @@ class Client:
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
     def data_prices(self, identifier: int | str, start: str, end: str | None, to_pandas=False):
-        """ """
+        """
+        Retrieves historical price data for a specific security by UID or ticker.
+
+        Tickers without a country code default to ':USA' (e.g., 'MSFT' becomes 'MSFT:USA').
+        Numeric identifiers are treated as P123 UIDs (e.g., '955' or '955:HKG').
+
+        Args:
+            identifier (int | str): Required. Security identifier (UID or ticker with optional country).
+            start (str): Required. Start date (inclusive) in 'yyyy-mm-dd' format.
+            end (str): End date (inclusive) in 'yyyy-mm-dd' format. If omitted or None, defaults to the current date.
+            to_pandas (bool): If True, converts the prices list into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the security information and a list of historical price records (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> client.data_prices(identifier="MSFT", start="2025-01-03", end="2025-05-31")
+            {
+                'security': {
+                    'p123Uid': 5881,
+                    'ticker': 'MSFT:USA'
+                },
+                'prices': [
+                    {
+                        'date': '2025-01-03',
+                        'open': 150.25,
+                        'high': 152.3,
+                        'low': 149.8,
+                        'close': 152.35,
+                        'vol': 25678900
+                    },
+                    {
+                        'date': '2025-01-06',
+                        'open': 152.5,
+                        'high': 153.8,
+                        'low': 151.2,
+                        'close': 153.25,
+                        'vol': 24135600
+                    }
+                ]
+            }
+        """
         get_params = [("start", start)]
         if end is not None:
             get_params.append(("end", end))
