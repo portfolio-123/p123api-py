@@ -359,10 +359,10 @@ class Client:
             >>> params = {
             ...     "type": "Stock",
             ...     "rules": [
-            ...         "string"
+            ...         "Price > 1"
             ...     ],
-            ...     "startingUniverse": "string",
-            ...     "currency": "USD"
+            ...     "currency": "USD",
+            ...     "startingUniverse": "ALLFUND"
             ... }
             >>> client.universe_update(params)
             {
@@ -388,14 +388,14 @@ class Client:
             params (dict): A dictionary of parameters for the data request.
                 Expected keys include::
 
-                    - formulas (list of str): Required. Array of formulas to evaluate.
+                    - formulas (list[str]): Required. Array of formulas to evaluate.
                     - startDt (str): Required. Start date (yyyy-mm-dd).
                     - endDt (str): End date (yyyy-mm-dd).
-                    - p123Uids (list of int): Array of P123 UIDs (maximum 100).
-                    - tickers (list of str): Array of tickers (maximum 100).
-                    - gvkeys (list of str): Array of GVKeys (maximum 100).
-                    - ciks (list of str): Array of CIKs (maximum 100).
-                    - figis (list of str): Array of FIGIs (maximum 100).
+                    - p123Uids (list[int]): Array of P123 UIDs (maximum 100).
+                    - tickers (list[str]): Array of tickers (maximum 100).
+                    - gvkeys (list[str]): Array of GVKeys (maximum 100).
+                    - ciks (list[str]): Array of CIKs (maximum 100).
+                    - figis (list[str]): Array of FIGIs (maximum 100).
                     - frequency (str): Retrieval frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
                       'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
                       'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every Week'.
@@ -418,15 +418,12 @@ class Client:
             ...     "pitMethod": "Complete",
             ...     "precision": 2,
             ...     "currency": "USD",
-            ...     "benchmark": "string",
-            ...     "formulas": ["string"],
+            ...     "benchmark": "SPY",
+            ...     "formulas": ["close(0)", "peg"],
             ...     "includeNames": True,
-            ...     "p123Uids": [1073741824],
-            ...     "tickers": ["string"],
-            ...     "gvkeys": ["string"],
-            ...     "ciks": ["string"],
-            ...     "figis": ["string"],
-            ...     "startDt": "2026-06-24",
+            ...     "tickers": ["IBM"],
+            ...     "figis":  ["BBG000BLNQ16"],
+            ...     "startDt": "2025-02-01",
             ...     "endDt": "2026-06-24",
             ...     "frequency": "Every Week",
             ...     "region": "United States",
@@ -434,26 +431,33 @@ class Client:
             ... }
             >>> client.data(params)
             {
-                'cost': 1,
-                'quotaRemaining': 1533,
-                'items': {
-                    '4737': {
-                        'ticker': 'IBM',
-                        'series': [
-                            [115457.36, 113310.56, '...'],
-                            [6777, 6777, '...'],
-                            '...'
+                "cost": 1,
+                "quotaRemaining": 50001,
+                "dates": [
+                    "2025-02-01",
+                    "2025-02-08",
+                    "2025-02-15",
+                    ...
+                ],
+                "items": {
+                    "4737": {
+                        "ticker": "IBM",
+                        "figi": "BBG000BLNQ16",
+                        "series": [
+                            [
+                                244.283,
+                                241.073,
+                                251.277,
+                                ...
+                            ],
+                            [
+                                5.043,
+                                4.967,
+                                5.143,
+                                ...
+                            ]
                         ]
-                    },
-                    '4773': {
-                        'ticker': 'INTC',
-                        'series': [
-                            [238180.8, 239253.3, '...'],
-                            [11356, 11356, '...'],
-                            '...'
-                        ]
-                    },
-                    '...': {}
+                    }
                 }
             }
         """
@@ -496,14 +500,14 @@ class Client:
             params (dict): A dictionary of parameters for the data request.
                 Expected keys include::
 
-                    - universe (int or str): Required. The universe ID or name (use 'ApiUniverse' for temporary ones).
-                    - formulas (list of str): Required. Array of formulas to evaluate.
+                    - universe (int | str): Required. The universe ID or name (use 'ApiUniverse' for temporary ones).
+                    - formulas (list[str]): Required. Array of formulas to evaluate.
                     - type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
                     - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY'). Defaults to 'USD'.
                     - benchmark (str): Benchmark ticker.
                     - precision (int or None): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
                     - asOfDt (str): As of date (yyyy-mm-dd).
-                    - asOfDts (list of str): Array of as of dates (yyyy-mm-dd).
+                    - asOfDts (list[str]): Array of as of dates (yyyy-mm-dd).
                     - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to Complete.
                     - includeNames (bool): Whether to include company names in the output.
@@ -515,27 +519,27 @@ class Client:
                         - outliers (bool): Clip outliers. Defaults to False.
                         - outlierLimit (float): Used for normal scaling. Defaults to 0.
                         - mlTrainingEnd (str): End date for scaling when scope='dataset'.
-                        - excludedFormulas (list of str): Formulas excluded (data license required for non-technical factors).
+                        - excludedFormulas (list[str]): Formulas excluded (data license required for non-technical factors).
 
             to_pandas (bool): If True, converts the data, tickers, and names arrays into a pandas DataFrame.
 
         Returns:
-            dict or pandas.DataFrame: A dictionary containing the operation's cost,
-            remaining quota, date, and parallel arrays of P123 UIDs, tickers, names,
-            and the requested data (or a DataFrame if to_pandas is True).
+            dict | pandas.DataFrame: A dictionary containing the operation's cost,
+              remaining quota, date, and parallel arrays of P123 UIDs, tickers, names, and
+                the requested data (or a DataFrame if to_pandas is True).
 
         Examples:
             >>> params = {
             ...     "pitMethod": "Complete",
             ...     "formulas": [
-            ...         "string"
+            ...         "close(0)"
             ...     ],
             ...     "includeNames": True,
             ...     "precision": 2,
             ...     "currency": "USD",
-            ...     "benchmark": "string",
+            ...     "benchmark": "SPY",
             ...     "type": "ETF",
-            ...     "universe": 1073741824,
+            ...     "universe": "Prussell 2000",
             ...     "asOfDt": "2026-06-24",
             ...     "asOfDts": [
             ...         "2026-06-24"
@@ -547,14 +551,41 @@ class Client:
             ... }
             >>> client.data_universe(params, to_pandas=False)
             {
-                'cost': 0.1,
-                'quotaRemaining': 0.1,
-                'dt': '2026-06-24',
-                'p123Uids': [1073741824],
-                'tickers': ['string'],
-                'names': ['string'],
-                'data': [[0.1]],
-                'figi': ['string']
+                "cost": 1,
+                "quotaRemaining": 50007,
+                "dt": "2024-07-01",
+                "p123Uids": [
+                    159,
+                    115627,
+                    26968,
+                    ...
+                ],
+                "tickers": [
+                    "RAMP",
+                    "BHVN",
+                    "AROC",
+                    ...
+                ],
+                "data": [
+                    [
+                        30.94,
+                        34.71,
+                        20.22,
+                        ...
+                    ]
+                ],
+                "names": [
+                    "LiveRamp Holdings, Inc.",
+                    "Biohaven Ltd.",
+                    "Archrock, Inc.",
+                    ...
+                ],
+                "figi": [
+                    "BBG001S5NCJ3",
+                    "BBG017BXV3R8",
+                    "BBG001SVDK72"
+                    ...
+                ]
             }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_UNIVERSE_PATH, json=params)
@@ -680,7 +711,7 @@ class Client:
         Args:
             name: Ranking system name.
             nodes: Ranking system nodes XML.
-            rankingMeth    thod to be used.
+            rankingMethod: Ranking method to be used.
             type: Ranking method type. Use "Stock" or "ETF".
             currency: Ranking method currency.
 
@@ -1144,19 +1175,14 @@ class Client:
 
         Args:
             predictor_id (int): Required. The ID of the trained predictor.
-            params (dict, optional): A dictionary of parameters for the prediction request.
+            params (dict): A dictionary of parameters for the prediction request.
                 Expected keys include::
 
                     - precision (int): Fixed precision digits (2 to 6). Defaults to 2.
-
-                    - universe (int or str): Universe name or ID.
-
+                    - universe (int | str): Universe name or ID.
                     - asOfDt (str): As of date (yyyy-mm-dd).
-
                     - includeNames (bool): Whether to include company names.
-
                     - includeFeatures (bool): Whether to include features.
-
                     - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
             to_pandas (bool): If True, converts the resulting arrays into a pandas DataFrame. Defaults to False.
 
@@ -1167,13 +1193,13 @@ class Client:
         Examples:
             >>> params = {
             ...     "precision": 2,
-            ...     "universe": 1073741824,
+            ...     "universe": "Prussell 2000",
             ...     "asOfDt": "2026-06-25",
             ...     "includeNames": True,
             ...     "includeFeatures": True,
             ...     "figi": "Share Class"
             ... }
-            >>> client.aifactor_predict(1073741824, params, to_pandas=False)
+            >>> client.aifactor_predict(217945, params, to_pandas=False)
             {
                 'cost': 1,
                 'quotaRemaining': 1533,
@@ -1225,9 +1251,9 @@ class Client:
         Numeric identifiers are treated as P123 UIDs (e.g., '955' or '955:HKG').
 
         Args:
-            identifier (int or str): Required. Security identifier (UID or ticker with optional country).
+            identifier (int | str): Required. Security identifier (UID or ticker with optional country).
             start (str): Required. Start date (inclusive) in 'yyyy-mm-dd' format.
-            end (str, optional): End date (inclusive) in 'yyyy-mm-dd' format. If None, defaults to the current date.
+            end (str): End date (inclusive) in 'yyyy-mm-dd' format. If omitted or None, defaults to the current date.
             to_pandas (bool): If True, converts the prices list into a pandas DataFrame. Defaults to False.
 
         Returns:
@@ -1235,7 +1261,7 @@ class Client:
             and a list of historical price records (or a DataFrame if to_pandas is True).
 
         Examples:
-            >>> client.data_prices(identifier="MSFT", start="2025-01-03", end="2025-05-31", to_pandas=False)
+            >>> client.data_prices(identifier="MSFT", start="2025-01-03", end="2025-05-31")
             {
                 'cost': 1,
                 'quotaRemaining': 1499,
@@ -1253,7 +1279,7 @@ class Client:
                         'vol': 25678900
                     },
                     {
-                        'date': '2025-05-31',
+                        'date': '2025-01-06',
                         'open': 152.5,
                         'high': 153.8,
                         'low': 151.2,
