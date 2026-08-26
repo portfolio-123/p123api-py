@@ -1040,17 +1040,31 @@ class Client:
         the stock factor data will still reflect the original resolution.
 
         Args:
-            factor_id: Unique identifier of the stock factor.
-            data: Delimited content string or file-like containing delimited content. Must not exceed 100 MB or 5 million lines.
-            column_separator: Separator character between columns. Defaults to comma.
-            existing_data: Policy for dealing with collisions against stored (date, stock ID) pairs. Defaults to ``overwrite``.
-                - ``overwrite``: Overwrite stored values.
-                - ``skip``: Retaine stored values.
-                - ``delete``: Clear before storing uploaded data.
-            date_format: Date format. Defaults to ``yyyy-mm-dd``.
-            decimal_separator: Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
-            ignore_errors: If ``True``, lines in the data with errors will be silently discarded.
-            ignore_duplicates: If ``True``, additional occurrences of a (date, identifier) pair in the data are skipped.
+            factor_id (int): Unique identifier of the stock factor.
+            data (str | IO[str]): Delimited content string or file-like containing delimited content. Must not exceed 100 MB or 5 million lines.
+            column_separator (Literal[",", ";", "\t"]): Separator character between columns. Defaults to comma.
+            existing_data (Literal["overwrite", "skip", "delete"]): Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
+                Allowed values include::
+
+                    - overwrite: Overwrite stored values.
+                    - skip: Retaine stored values.
+                    - delete: Clear before storing uploaded data.
+
+            date_format (str): Date format. Defaults to ``yyyy-mm-dd``.
+            decimal_separator (Literal[".", ","]): Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
+            ignore_errors (bool): If ``True``, lines in the data with errors will be silently discarded.
+            ignore_duplicates (bool): If ``True``, additional occurrences of a (date, identifier) pair in the data are skipped.
+
+        Example:
+        >>> client.stock_factor_upload(
+        ...     data=csv_data,
+        ...     factor_id=4412,
+        ...     column_separator=",",
+        ...     existing_data="overwrite",
+        ...     ignore_errors=True,
+        ...     ignore_duplicates=True
+        ... )
+        None
         """
 
         # COMPAT: column_separator originally accepted 'comma', 'semicolon', 'tab' which matches the API.
@@ -1076,19 +1090,43 @@ class Client:
 
     def stock_factor_create_update(self, params: dict) -> StockFactorResult:
         """
-        Stock factor create/update
-        :param params:
-        :return:
+        Creates or updates a stock factor.
+
+        Args:
+            params (dict[str, Any]): A dictionary of parameters for the create or update request.
+                Expected keys include::
+
+                    - id (int): The ID of the stock factor to update. Omit to create a new stock factor.
+                    - name (str): Name of the stock factor (Required for creating a new stock factor).
+                    - maxDays (int): Controls how long a factor is valid. If a factor value is older than Max Days from an observation date, it will be set to N/A.
+                    - maxLookback (int): Controls how much extra data is loaded for the analysis both past and future. This is an advanced setting to support the use of the FHist() function. If you do not use FHist() with your factor, set it to 0 so that no extra data is loaded.
+
+        Returns:
+            An object containing the identifier for the stock factor operation.
+
+        Examples:
+            >>> params = {
+            ...     'name': 'My Custom Factor',
+            ...     'maxDays': 5,
+            ...     'maxLookback': 0
+            ... }
+            >>> client.stock_factor_create_update(params=params)
+            StockFactorResult(factorId=98765)
         """
         return self._req_with_auth_fallback(
             url=self._endpoint + STOCK_FACTOR_CREATE_UPDATE_PATH, json=params, result_type=StockFactorResult
         )
 
-    def stock_factor_delete(self, factor_id: int):
+    def stock_factor_delete(self, factor_id: int) -> None:
         """
-        Stock factor delete
-        :param factor_id: id of the data stock factor to delete
-        :return:
+        Deletes a specific stock factor by its ID.
+
+        Args:
+            factor_id (int): Required. The ID of the stock factor to delete.
+
+        Examples:
+            >>> client.stock_factor_delete(10737)
+            None
         """
         return self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_DELETE_PATH.substitute(id=factor_id), method="DELETE")
 
@@ -1229,9 +1267,35 @@ class Client:
 
     def stock_factor_download(self, factor_id: int):
         """
-        Stock factor download
-        :param factor_id:
-        :return:
+        Downloads data for a specific stock factor.
+
+        Args:
+            factor_id (int): Required. The ID of the stock factor.
+
+        Returns:
+            A dictionary containing the parallel
+            arrays of dates, tickers, values, and P123 UIDs representing the factor data.
+
+        Examples:
+            >>> client.stock_factor_download(1073741824)
+            {
+                'dates': [
+                    '2026-06-25',
+                    ...
+                ],
+                'tickers': [
+                    'IBM',
+                    ...
+                ],
+                'values': [
+                    0.1,
+                    ...
+                ],
+                'p123Uids': [
+                    107374,
+                    ...
+                ]
+            }
         """
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
