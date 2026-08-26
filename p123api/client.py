@@ -372,11 +372,30 @@ class Client:
         """
         return self._req_with_auth_fallback(url=self._endpoint + UNIVERSE_PATH, json=params)
 
-    def rank_update(self, params: dict):
+    def rank_update(self, params: dict) -> None:
         """
-        Ranking system update
-        :param params:
-        :return:
+        Updates a ranking system.
+
+        Args:
+            params (dict): A dictionary of parameters for the ranking system update.
+                Key arguments include::
+
+                    - type (str): Required. Type of ranking system ('Stock' or 'ETF').
+                    - nodes (str): Required. Nodes in XML format.
+                    - id (int): The ID of the ranking system to update. Omit this to update the API ranking system.
+                    - rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)). Defaults to 2.
+                    - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY'). Defaults to 'USD'.
+
+        Examples:
+            >>> params = {
+            ...     "id": 2373,
+            ...     "type": "Stock",
+            ...     "rankingMethod": 2,
+            ...     "nodes": "<RankingSystem RankType=\"Higher\">...</RankingSystem>",
+            ...     "currency": "USD"
+            ... }
+            >>> client.rank_update(params)
+            None
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PATH, json=params)
 
@@ -632,10 +651,119 @@ class Client:
 
     def rank_ranks(self, params: dict, to_pandas=False):
         """
-        Ranking system ranks
-        :param params:
-        :param to_pandas:
-        :return:
+        Retrieves ranking system ranks for a specific date.
+
+        Args:
+            params (dict): A dictionary of parameters for the ranks request.
+                Key arguments include::
+
+                    - rankingSystem (int or str): Required. The ranking system ID or name.
+                    - asOfDt (str): Required. As of date (yyyy-mm-dd).
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to 'Complete'.
+                    - precision (int): Fixed precision digits (2 to 8).
+                    - universe (str): Universe name (use 'ApiUniverse' for temporary ones).
+                    - rankingMethod (int): Ranking method (e.g., 2, 4, 1).
+                    - tickers (str): Tickers to include.
+                    - includeNames (bool): Include company names in the output. Defaults to False.
+                    - includeNaCnt (bool): Include NA count. Defaults to False.
+                    - includeFinalStmt (bool): Include final statement flag. Defaults to False.
+                    - includeNodeDetails (bool): Include node details. Defaults to False.
+                    - nodeDetails (str): Include node details ('composite' or 'factor'). Omit for no details.
+                    - additionalData (list of str): Additional data formulas to evaluate (maximum 100).
+                    - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY').
+                      Defaults to 'USD'.
+                    - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+            to_pandas (bool): If True, converts the resulting arrays into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the date, parallel arrays for UIDs, tickers, ranks, node details, and requested additional data (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "precision": 3,
+            ...     "rankingSystem": 267332,
+            ...     "universe": "Prussell 2000",
+            ...     "rankingMethod": 2,
+            ...     "asOfDt": "2020-04-24",
+            ...     "tickers": "AAPL",
+            ...     "includeNames": True,
+            ...     "includeNaCnt": False,
+            ...     "includeFinalStmt": True,
+            ...     "includeNodeDetails": False,
+            ...     "nodeDetails": "composite",
+            ...     "additionalData": [
+            ...         "close(2)", "close(1)", "close(0)"
+            ...     ],
+            ...     "currency": "USD",
+            ...     "figi": "Share Class"
+            ... }
+            >>> client.rank_ranks(params, to_pandas=False)
+            {
+                "dt": "2020-04-18",
+                "p123Uids": [
+                    774
+                ],
+                "tickers": [
+                    "AAPL"
+                ],
+                "names": [
+                    "Apple, Inc."
+                ],
+                "naCnt": [
+                    16
+                ],
+                "finalStmt": [
+                    true
+                ],
+                "ranks": [
+                    97.872
+                ],
+                "nodes": {
+                    "ids": [
+                        0,
+                        1,
+                        6,
+                        ...
+                    ],
+                    "names": [
+                        "Industry performance comparison",
+                        "TechRank",
+                        "Valuation",
+                        ...
+                    ],
+                    "parents": [
+                        0,
+                        0,
+                        0,
+                        ...
+                    ],
+                    "weights": [
+                        100.0,
+                        40.0,
+                        40.0,
+                        ...
+                    ],
+                    "ranks": [
+                        [
+                            97.872,
+                            97.642,
+                            69.321,
+                            ...
+                        ]
+                    ]
+                },
+                "additionalData": [
+                    [
+                        284.43,
+                        286.69,
+                        282.8
+                    ]
+                ]
+                "figi": [
+                    "BBG001S5N8V8"
+                ],
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + RANK_RANKS_PATH, json=params)
 
@@ -675,16 +803,82 @@ class Client:
 
     def rank_perf(self, params: dict):
         """
-        Ranking system performance
-        :param params:
-        :return:
+        Evaluates the performance of a ranking system.
+
+        Args:
+            params (dict): A dictionary of parameters for the ranking system performance evaluation.
+                Key arguments include::
+
+                    - rankingSystem (int | str): Required. The ranking system ID or name.
+                    - startDt (str): Required. Start date (yyyy-mm-dd).
+                    - endDt (str): End date (yyyy-mm-dd).
+                    - numBuckets (int): Number of rank buckets (2 to 200). Defaults to 20.
+                    - maxNAs (float): Maximum number of NAs (9999 or unspecified to disable).
+                    - minPrice (float): Minimum price. Defaults to 3.
+                    - minLiquidity (float): Minimum liquidity (0 or unspecified to disable).
+                    - maxReturn (float): Maximum return (0 or unspecified to disable).
+                    - rebalFreq (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                      'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                      'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                    - slippage (float): Slippage percentage applied when a stock changes bucket to make
+                      performance more realistic. Defaults to 0.
+                    - transType (str): Transaction type ('long' or 'short'). Defaults to 'long'.
+                    - benchmark (str): Benchmark ticker. Defaults to 'SPY'.
+                    - outputType (str): Output type ('ann' for annualized returns, 'perf' for performance). Defaults to 'ann'.
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to 'Complete'.
+                    - precision (int): Fixed precision digits.
+                    - universe (str): Universe name.
+                    - rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)).
+
+        Returns:
+            A dictionary containing the ranking system's performance results.
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Complete",
+            ...     "precision": 2,
+            ...     "rankingSystem": 1073,
+            ...     "universe": "Prussell 2000",
+            ...     "rankingMethod": 2,
+            ...     "numBuckets": 20,
+            ...     "maxNAs": 100,
+            ...     "minPrice": 3,
+            ...     "minLiquidity": 5000,
+            ...     "maxReturn": 200,
+            ...     "rebalFreq": "Every 4 Weeks",
+            ...     "slippage": 0,
+            ...     "transType": "long",
+            ...     "benchmark": "SPY",
+            ...     "startDt": "2015-04-21",
+            ...     "endDt": "2026-06-25",
+            ...     "outputType": "ann"
+            ... }
+            >>> client.rank_perf(params)
+            {
+                "benchmarkAnnRet": 13.6885,
+                "bucketAnnRet": [
+                    2.1824,
+                    5.9422,
+                    6.8893,
+                    ...
+                ]
+            }
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PERF_PATH, json=params)
 
     def rank_touch(self, rank_id: int):
         """
-        Rank touch
-        :param rank_id:
+        Touches a ranking system by its ID.
+
+        Args:
+            rank_id (int): Required. The ID of the ranking system to touch.
+
+        Returns:
+            A string confirming the touch operation.
+
+        Examples:
+            >>> client.rank_touch(107374)
+            '1'
         """
         self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id))
 
