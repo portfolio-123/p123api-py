@@ -1044,12 +1044,8 @@ class Client:
             data (str | IO[str]): Delimited content string or file-like containing delimited content. Must not exceed 100 MB or 5 million lines.
             column_separator (Literal[",", ";", "\t"]): Separator character between columns. Defaults to comma.
             existing_data (Literal["overwrite", "skip", "delete"]): Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
-                Allowed values include::
-
-                    - overwrite: Overwrite stored values.
-                    - skip: Retaine stored values.
-                    - delete: Clear before storing uploaded data.
-
+            existing_data (Literal["overwrite", "skip", "delete"]): Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
+                Allowed values include 'overwrite' (overwrite stored values), 'skip' (retain stored values), or 'delete' (clear before storing uploaded data).
             date_format (str): Date format. Defaults to ``yyyy-mm-dd``.
             decimal_separator (Literal[".", ","]): Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
             ignore_errors (bool): If ``True``, lines in the data with errors will be silently discarded.
@@ -1099,17 +1095,13 @@ class Client:
                     - id (int): The ID of the stock factor to update. Omit to create a new stock factor.
                     - name (str): Name of the stock factor (Required for creating a new stock factor).
                     - maxDays (int): Controls how long a factor is valid. If a factor value is older than Max Days from an observation date, it will be set to N/A.
-                    - maxLookback (int): Controls how much extra data is loaded for the analysis both past and future. This is an advanced setting to support the use of the FHist() function. If you do not use FHist() with your factor, set it to 0 so that no extra data is loaded.
+                    - fhistRange (int): Controls how much extra data is loaded for the analysis both past and future. This is an advanced setting to support the use of the FHist() function. If you do not use FHist() with your factor, set it to 0 so that no extra data is loaded.
 
         Returns:
             An object containing the identifier for the stock factor operation.
 
         Examples:
-            >>> params = {
-            ...     'name': 'My Custom Factor',
-            ...     'maxDays': 5,
-            ...     'maxLookback': 0
-            ... }
+            >>> params = { "name": "My Custom Factor", "maxDays": 5, "fhistRange": 0 }
             >>> client.stock_factor_create_update(params=params)
             StockFactorResult(factorId=98765)
         """
@@ -1122,7 +1114,7 @@ class Client:
         Deletes a specific stock factor by its ID.
 
         Args:
-            factor_id (int): Required. The ID of the stock factor to delete.
+            factor_id (int): The ID of the stock factor to delete.
 
         Examples:
             >>> client.stock_factor_delete(10737)
@@ -1270,31 +1262,18 @@ class Client:
         Downloads data for a specific stock factor.
 
         Args:
-            factor_id (int): Required. The ID of the stock factor.
+            factor_id (int): The ID of the stock factor.
 
         Returns:
-            A dictionary containing the parallel
-            arrays of dates, tickers, values, and P123 UIDs representing the factor data.
+            A dictionary containing the parallel arrays of dates, tickers, values, and P123 UIDs representing the factor data.
 
         Examples:
-            >>> client.stock_factor_download(1073741824)
+            >>> client.stock_factor_download(23124)
             {
-                'dates': [
-                    '2026-06-25',
-                    ...
-                ],
-                'tickers': [
-                    'IBM',
-                    ...
-                ],
-                'values': [
-                    0.1,
-                    ...
-                ],
-                'p123Uids': [
-                    107374,
-                    ...
-                ]
+                'dates': [ '2026-06-25', ...  ],
+                'tickers': [ 'IBM', ...  ],
+                'values': [ 0.1, ...  ],
+                'p123Uids': [ 107374, ...  ]
             }
         """
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
@@ -1385,7 +1364,7 @@ class Client:
             An object containing the basic stock factor info.
 
         Examples:
-            >>> client.stock_factor_info(name='Stock factor name')
+            >>> client.stock_factor_info(name="Stock factor name")
             StockFactorInfoResult(factorId=123, name='Stock factor name')
         """
         ...
