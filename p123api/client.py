@@ -377,7 +377,7 @@ class Client:
         Updates a ranking system.
 
         Args:
-            params (dict): A dictionary of parameters for the ranking system update.
+            params (dict[str, Any]): A dictionary of parameters for the ranking system update.
                 Key arguments include::
 
                     - type (str): Required. Type of ranking system ('Stock' or 'ETF').
@@ -422,7 +422,7 @@ class Client:
                       Defaults to 'United States'.
                     - ignoreErrors (bool): If True, ignores invalid/ambiguous P123 UIDs, tickers, GVKeys, CIKs, or FIGIs instead of failing. Defaults to True.
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to Complete.
-                    - precision (int): Fixed precision digits. Defaults to 2.
+                    - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
                     - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY').
                       Defaults to 'USD'.
                     - benchmark (str): Benchmark ticker.
@@ -521,7 +521,7 @@ class Client:
                     - type (str): Type of universe ('Stock' or 'ETF'). Defaults to 'Stock'.
                     - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY'). Defaults to 'USD'.
                     - benchmark (str): Benchmark ticker.
-                    - precision (int or None): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
+                    - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
                     - asOfDt (str): As of date (yyyy-mm-dd).
                     - asOfDts (list[str]): Array of as of dates (yyyy-mm-dd).
                     - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
@@ -654,22 +654,22 @@ class Client:
         Retrieves ranking system ranks for a specific date.
 
         Args:
-            params (dict): A dictionary of parameters for the ranks request.
+            params (dict[str, Any]): A dictionary of parameters for the ranks request.
                 Key arguments include::
 
-                    - rankingSystem (int or str): Required. The ranking system ID or name.
+                    - rankingSystem (int | str): Required. The ranking system ID or name.
                     - asOfDt (str): Required. As of date (yyyy-mm-dd).
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to 'Complete'.
-                    - precision (int): Fixed precision digits (2 to 8).
+                    - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
                     - universe (str): Universe name (use 'ApiUniverse' for temporary ones).
-                    - rankingMethod (int): Ranking method (e.g., 2, 4, 1).
+                    - rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)). Defaults to 2.
                     - tickers (str): Tickers to include.
                     - includeNames (bool): Include company names in the output. Defaults to False.
                     - includeNaCnt (bool): Include NA count. Defaults to False.
                     - includeFinalStmt (bool): Include final statement flag. Defaults to False.
                     - includeNodeDetails (bool): Include node details. Defaults to False.
                     - nodeDetails (str): Include node details ('composite' or 'factor'). Omit for no details.
-                    - additionalData (list of str): Additional data formulas to evaluate (maximum 100).
+                    - additionalData (list[str]): Additional data formulas to evaluate (maximum 100).
                     - currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY').
                       Defaults to 'USD'.
                     - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
@@ -700,69 +700,33 @@ class Client:
             ... }
             >>> client.rank_ranks(params, to_pandas=False)
             {
-                "dt": "2020-04-18",
-                "p123Uids": [
-                    774
-                ],
-                "tickers": [
-                    "AAPL"
-                ],
-                "names": [
-                    "Apple, Inc."
-                ],
-                "naCnt": [
-                    16
-                ],
-                "finalStmt": [
-                    true
-                ],
-                "ranks": [
-                    97.872
-                ],
-                "nodes": {
-                    "ids": [
-                        0,
-                        1,
-                        6,
+                'dt': '2020-04-18',
+                'p123Uids': [ 774 ],
+                'tickers': [ 'AAPL' ],
+                'names': [ 'Apple, Inc.' ],
+                'naCnt': [ 16 ],
+                'finalStmt': [ true ],
+                'ranks': [ 97.872 ],
+                'nodes': {
+                    'ids': [ 0, 1, 6, ...  ],
+                    'names': [
+                        'Industry performance comparison',
+                        'TechRank',
+                        'Valuation',
                         ...
                     ],
-                    "names": [
-                        "Industry performance comparison",
-                        "TechRank",
-                        "Valuation",
+                    'parents': [ 0, 0, 0, ...  ],
+                    'weights': [ 100.0, 40.0, 40.0, ...  ],
+                    'ranks': [
+                        [ 97.872, 97.642, 69.321, ...  ],
                         ...
-                    ],
-                    "parents": [
-                        0,
-                        0,
-                        0,
-                        ...
-                    ],
-                    "weights": [
-                        100.0,
-                        40.0,
-                        40.0,
-                        ...
-                    ],
-                    "ranks": [
-                        [
-                            97.872,
-                            97.642,
-                            69.321,
-                            ...
-                        ]
                     ]
                 },
-                "additionalData": [
-                    [
-                        284.43,
-                        286.69,
-                        282.8
-                    ]
-                ]
-                "figi": [
-                    "BBG001S5N8V8"
+                'additionalData': [
+                    [ 284.43, 286.69, 282.8 ],
+                    ...
                 ],
+                'figi': [ "BBG001S5N8V8" ]
             }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + RANK_RANKS_PATH, json=params)
@@ -806,7 +770,7 @@ class Client:
         Evaluates the performance of a ranking system.
 
         Args:
-            params (dict): A dictionary of parameters for the ranking system performance evaluation.
+            params (dict[str, Any]): A dictionary of parameters for the ranking system performance evaluation.
                 Key arguments include::
 
                     - rankingSystem (int | str): Required. The ranking system ID or name.
@@ -826,7 +790,7 @@ class Client:
                     - benchmark (str): Benchmark ticker. Defaults to 'SPY'.
                     - outputType (str): Output type ('ann' for annualized returns, 'perf' for performance). Defaults to 'ann'.
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to 'Complete'.
-                    - precision (int): Fixed precision digits.
+                    - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
                     - universe (str): Universe name.
                     - rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)).
 
@@ -855,30 +819,25 @@ class Client:
             ... }
             >>> client.rank_perf(params)
             {
-                "benchmarkAnnRet": 13.6885,
-                "bucketAnnRet": [
-                    2.1824,
-                    5.9422,
-                    6.8893,
-                    ...
-                ]
+                'benchmarkAnnRet': 13.6885,
+                'bucketAnnRet': [ 2.1824, 5.9422, 6.8893, ...  ]
             }
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PERF_PATH, json=params)
 
-    def rank_touch(self, rank_id: int):
+    def rank_touch(self, rank_id: int) -> None:
         """
         Touches a ranking system by its ID.
 
         Args:
-            rank_id (int): Required. The ID of the ranking system to touch.
+            rank_id (int): The ID of the ranking system to touch.
 
         Returns:
             A string confirming the touch operation.
 
         Examples:
             >>> client.rank_touch(107374)
-            '1'
+            None
         """
         self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id))
 
@@ -908,11 +867,11 @@ class Client:
 
         Examples:
             >>> client.rank_create(
-            ...     'New Ranking System',
-            ...     '<RankingSystem RankType="Higher">...</RankingSystem>',
+            ...     "New Ranking System",
+            ...     "<RankingSystem RankType="Higher">...</RankingSystem>",
             ...     rankingMethod=RankingMethod.PERCENTILE_NA_NEGATIVE,
-            ...     type='Stock',
-            ...     currency='USD'
+            ...     type="Stock",
+            ...     currency="USD"
             ... )
             IdResult(id=98765)
         """
@@ -966,7 +925,7 @@ class Client:
             An object containing the ranking system's details.
 
         Examples:
-            >>> client.rank_get(name='My Ranking System')
+            >>> client.rank_get(name="My Ranking System")
             RankInfoResult(
                 name='My Ranking System',
                 id=12345,
@@ -1366,7 +1325,7 @@ class Client:
             params (dict[str, Any]): A dictionary of parameters for the prediction request.
                 Expected keys include::
 
-                    - precision (int): Fixed precision digits (2 to 6). Defaults to 2.
+                    - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
                     - universe (int | str): Universe name or ID.
                     - asOfDt (str): As of date (yyyy-mm-dd).
                     - includeNames (bool): Whether to include company names.
