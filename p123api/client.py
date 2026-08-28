@@ -1123,12 +1123,7 @@ class Client:
             series_id (int): Unique identifier of the data series.
             data (str | IO[str]): Delimited content string or file-like containing delimited content. Must not exceed 100 MB.
             existing_data (Literal["overwrite", "skip", "delete"]): Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
-                Allowed values include::
-
-                    - overwrite: Overwrite stored values.
-                    - skip: Retaine stored values.
-                    - delete: Clear before storing uploaded data.
-
+                Allowed values include 'overwrite' (overwrite stored values), 'skip' (retain stored values), or 'delete' (clear before storing uploaded data).
             date_format (str): Date format. Defaults to ``yyyy-mm-dd``.
             decimal_separator (Literal[".", ","]): Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
             ignore_errors (bool): If ``True``, lines in the data with errors will be silently discarded.
@@ -1161,7 +1156,7 @@ class Client:
         Creates a new data series or updates an existing one.
 
         Args:
-            params (dict): A dictionary of parameters for the data series.
+            params (dict[str, Any]): A dictionary of parameters for the data series.
                 Key arguments include::
 
                     - name (str): Required. Name of the data series.
@@ -1169,18 +1164,12 @@ class Client:
                     - description (str): Description of the data series.
 
         Returns:
-            A dictionary containing the data series ID.
+            An object containing the data series ID.
 
         Examples:
-            >>> params = {
-            ...     "id": 10737,
-            ...     "name": "Data Series",
-            ...     "description": "Data series description"
-            ... }
+            >>> params = { "id": 10737, "name": "Data Series", "description": "Data series description" }
             >>> client.data_series_create_update(params)
-            {
-                'dataSeriesId': 10737
-            }
+            DataSeriesResult(dataSeriesId=10737)
         """
         return self._req_with_auth_fallback(url=self._endpoint + DATA_SERIES_CREATE_UPDATE_PATH, json=params, result_type=DataSeriesResult)
 
@@ -1189,7 +1178,7 @@ class Client:
         Deletes a specific data series by its ID.
 
         Args:
-            series_id (int): Required. The ID of the data series to delete.
+            series_id (int): The ID of the data series to delete.
 
         Examples:
             >>> client.data_series_delete(10734)
@@ -1205,7 +1194,7 @@ class Client:
         Retrieves predictions for a trained AI Factor predictor.
 
         Args:
-            predictor_id (int): Required. The ID of the trained predictor.
+            predictor_id (int): The ID of the trained predictor.
             params (dict[str, Any]): A dictionary of parameters for the prediction request.
                 Expected keys include::
 
@@ -1280,8 +1269,8 @@ class Client:
         Numeric identifiers are treated as P123 UIDs (e.g., '955' or '955:HKG').
 
         Args:
-            identifier (int | str): Required. Security identifier (UID or ticker with optional country).
-            start (str): Required. Start date (inclusive) in 'yyyy-mm-dd' format.
+            identifier (int | str): Security identifier (UID or ticker with optional country).
+            start (str): Start date (inclusive) in 'yyyy-mm-dd' format.
             end (str): End date (inclusive) in 'yyyy-mm-dd' format. If omitted or None, defaults to the current date.
             to_pandas (bool): If True, converts the prices list into a pandas DataFrame. Defaults to False.
 
@@ -1424,7 +1413,7 @@ class Client:
             An object containing the basic data series info.
 
         Examples:
-            >>> client.data_series_info(name='Data series name')
+            >>> client.data_series_info(name="Data series name")
             DataSeriesInfoResult(dataSeriesId=123, name='Data series name')
         """
         ...
