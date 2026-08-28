@@ -228,15 +228,15 @@ class Client:
         Executes a screen rolling backtest.
 
         Args:
-            params (dict): A dictionary of parameters for the rolling backtest.
+            params (dict[str, Any]): A dictionary of parameters for the rolling backtest.
                 Key arguments include::
 
                     - screen (int | dict): Required. The screen ID or screen definition parameters.
                     - startDt (str): Required. Backtest start date (yyyy-mm-dd).
                     - endDt (str): Backtest end date (yyyy-mm-dd).
                     - frequency (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
-                    - 'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
-                    - 'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                      'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                      'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
                     - holdingPeriod (int): Holding period in days (1 to 730). Defaults to 182.
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
                     - transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average). Defaults to 1.
@@ -244,7 +244,7 @@ class Client:
                     - longWeight (float): Long weight percentage. Defaults to 100.
                     - shortWeight (float): Short weight percentage. Defaults to 100.
                     - maxPosPct (float): Maximum position percentage (0 to 100). Limits the allocation to each position in the returned screen,
-                    working in conjunction with the maximum number of holdings. Defaults to 0.
+                      working in conjunction with the maximum number of holdings. Defaults to 0.
             to_pandas (bool): If True, converts the 'rows' and 'columns' of the result into a pandas DataFrame.
 
         Returns:
@@ -268,39 +268,14 @@ class Client:
             ... }
             >>> client.screen_rolling_backtest(params, to_pandas=False)
             {
-                "columns": [
-                    "#",
-                    "As Of Dt",
-                    "Rank Dt",
+                'columns': [ '#', 'As Of Dt', 'Rank Dt', ...  ],
+                'rows': [
+                    [ 14, '2020-11-15', '2020-11-14', ...  ],
                     ...
                 ],
-                "rows": [
-                    [
-                        14,
-                        "2020-11-15",
-                        "2020-11-14",
-                        ...
-                    ],
-                    ...
-                ],
-                "average": [
-                    null,
-                    null,
-                    null,
-                    ...
-                ],
-                "upMarkets": [
-                    null,
-                    14.0,
-                    null,
-                    ...
-                ],
-                "downMarkets": [
-                    null,
-                    0.0,
-                    null,
-                    ...
-                ]
+                'average': [ null, null, null, ...  ],
+                'upMarkets': [ null, 14.0, null, ...  ],
+                'downMarkets': [ null, 0.0, null, ...  ]
             }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH, json=params)
@@ -331,8 +306,8 @@ class Client:
                     - startDt (str): Required. Backtest start date (yyyy-mm-dd).
                     - endDt (str): Backtest end date (yyyy-mm-dd).
                     - rebalFreq (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
-                    - 'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
-                    - 'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                      'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                      'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
                     - riskStatsPeriod (str): Risk statistics period ('Monthly', 'Weekly', 'Daily'). Defaults to 'Monthly'.
                     - rankTolerance (float): Rank tolerance. Defaults to 0.
                     - carryCost (float): Carry cost percentage. Defaults to 1.5.
@@ -342,7 +317,7 @@ class Client:
                     - longWeight (float): Long weight percentage. Defaults to 100.
                     - shortWeight (float): Short weight percentage. Defaults to 100.
                     - maxPosPct (float): Maximum position percentage (0 to 100).
-                    Limits the allocation to each position in the returned screen, working in conjunction with the maximum number of holdings. Defaults to 0.
+                      Limits the allocation to each position in the returned screen, working in conjunction with the maximum number of holdings. Defaults to 0.
             to_pandas (bool): If True, converts the tabular components of the results into a pandas DataFrame.
 
         Returns:
@@ -368,97 +343,45 @@ class Client:
             ... }
             >>> client.screen_backtest(params, to_pandas=False)
             {
-                "cost": 5,
-                "quotaRemaining": 49988,
-                "stats": {
-                    "samples": 10,
-                    "correlation": 0.95,
-                    "r_squared": 0.9,
-                    "beta": 1.36,
-                    "alpha": -0.39,
-                    "port": {
-                        "standard_dev": 40.44,
-                        "sharpe_ratio": 0.64,
-                        "sortino_ratio": 0.84,
-                        "total_return": 20.58,
-                        "annualized_return": 20.6,
-                        "max_drawdown": -41.62
+                'stats': {
+                    'samples': 10,
+                    'correlation': 0.95,
+                    'r_squared': 0.9,
+                    'beta': 1.36,
+                    'alpha': -0.39,
+                    'port': {
+                        'standard_dev': 40.44,
+                        'sharpe_ratio': 0.64,
+                        'sortino_ratio': 0.84,
+                        'total_return': 20.58,
+                        'annualized_return': 20.6,
+                        'max_drawdown': -41.62
                     },
-                    "bench": {
-                        "standard_dev": 28.31,
-                        "sharpe_ratio": 0.68,
-                        "sortino_ratio": 0.91,
-                        "total_return": 17.24,
-                        "annualized_return": 17.25,
-                        "max_drawdown": -33.72
+                    'bench': {
+                        'standard_dev': 28.31,
+                        'sharpe_ratio': 0.68,
+                        'sortino_ratio': 0.91,
+                        'total_return': 17.24,
+                        'annualized_return': 17.25,
+                        'max_drawdown': -33.72
                     }
                 },
-                "results": {
-                    "columns": [
-                        "#",
-                        "As Of Dt",
-                        "Rank Dt",
+                'results': {
+                    'columns': [ '#', 'As Of Dt', 'Rank Dt', ...  ],
+                    'rows': [
+                        [ 14, '2020-12-27', '2020-12-26', ...  ],
                         ...
                     ],
-                    "rows": [
-                        [
-                            14,
-                            "2020-12-27",
-                            "2020-12-26",
-                            ...
-                        ],
-                        ...
-                    ],
-                    "average": [
-                        null,
-                        null,
-                        null,
-                        ...
-                    ],
-                    "upMarkets": [
-                        null,
-                        9.0,
-                        null,
-                        ...
-                    ],
-                    "downMarkets": [
-                        null,
-                        5.0,
-                        null,
-                        ...
-                    ]
+                    'average': [ null, null, null, ...  ],
+                    'upMarkets': [ null, 9.0, null, ...  ],
+                    'downMarkets': [ null, 5.0, null, ...  ]
                 },
-                "chart": {
-                    "dates": [
-                        "2020-01-01",
-                        "2020-01-02",
-                        "2020-01-03",
-                        ...
-                    ],
-                    "screenReturns": [
-                        100.0,
-                        99.75,
-                        99.29,
-                        ...
-                    ],
-                    "benchReturns": [
-                        100.0,
-                        100.0,
-                        99.24,
-                        ...
-                    ],
-                    "turnoverPct": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        ...
-                    ],
-                    "positionCnt": [
-                        0.0,
-                        3696.0,
-                        3696.0,
-                        ...
-                    ]
+                'chart': {
+                    'dates': [ '2020-01-01', '2020-01-02', '2020-01-03', ...  ],
+                    'screenReturns': [ 100.0, 99.75, 99.29, ...  ],
+                    'benchReturns': [ 100.0, 100.0, 99.24, ...  ],
+                    'turnoverPct': [ 0.0, 0.0, 0.0, ...  ],
+                    'positionCnt': [ 0.0, 3696.0, 3696.0, ...  ]
                 }
             }
         """
@@ -563,19 +486,9 @@ class Client:
             ... }
             >>> client.screen_run(params, to_pandas=False)
             {
-                "columns": [
-                    "P123 UID",
-                    "Ticker",
-                    "Name",
-                    ...
-                ],
-                "rows": [
-                    [
-                        774,
-                        "AAPL",
-                        "Apple, Inc.",
-                        ...
-                    ],
+                'columns': [ 'P123 UID', 'Ticker', 'Name', ...  ],
+                'rows': [
+                    [ 774, 'AAPL', 'Apple, Inc.', ...  ],
                     ...
                 ]
             }
@@ -677,29 +590,14 @@ class Client:
             ... }
             >>> client.data(params)
             {
-                "dates": [
-                    "2025-02-01",
-                    "2025-02-08",
-                    "2025-02-15",
-                    ...
-                ],
-                "items": {
-                    "4737": {
-                        "ticker": "IBM",
-                        "figi": "BBG000BLNQ16",
-                        "series": [
-                            [
-                                244.283,
-                                241.073,
-                                251.277,
-                                ...
-                            ],
-                            [
-                                5.043,
-                                4.967,
-                                5.143,
-                                ...
-                            ]
+                'dates': [ '2025-02-01', '2025-02-08', '2025-02-15', ...  ],
+                'items': {
+                    '4737': {
+                        'ticker': 'IBM',
+                        'figi': 'BBG000BLNQ16',
+                        'series': [
+                            [ 244.283, 241.073, 251.277, ...  ],
+                            [ 5.043, 4.967, 5.143, ...  ]
                         ]
                     }
                 }
