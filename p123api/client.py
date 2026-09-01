@@ -1167,7 +1167,7 @@ class Client:
             An object containing the data series ID.
 
         Examples:
-            >>> params = { "id": 10737, "name": "Data Series", "description": "Data series description" }
+            >>> params = {"id": 10737, "name": "Data Series", "description": "Data series description"}
             >>> client.data_series_create_update(params)
             DataSeriesResult(dataSeriesId=10737)
         """
