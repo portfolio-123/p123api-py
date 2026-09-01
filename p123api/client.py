@@ -843,29 +843,29 @@ class Client:
             'stats': {
                 'perf': {
                     'returnPct': {
-                        'total': { 'model': 41.18, 'bench': 73.18 },
-                        'annualized': { 'model': 10.56, 'bench': 17.33 },
-                        'yearToDate': { 'model': 8.24, 'bench': 17.81 },
-                        'monthToDate': { 'model': 3.22, 'bench': 3.68 },
-                        'period4Week': { 'model': 1.19, 'bench': 6.22 },
-                        'period13Week': { 'model': 7.56, 'bench': -1.67 },
-                        'period1Year': { 'model': 6.65, 'bench': 22.26 },
-                        'period3Year': { 'model': 36.34, 'bench': 55.22 }
+                        'total': {'model': 41.18, 'bench': 73.18},
+                        'annualized': {'model': 10.56, 'bench': 17.33},
+                        'yearToDate': {'model': 8.24, 'bench': 17.81},
+                        'monthToDate': {'model': 3.22, 'bench': 3.68},
+                        'period4Week': {'model': 1.19, 'bench': 6.22},
+                        'period13Week': {'model': 7.56, 'bench': -1.67},
+                        'period1Year': {'model': 6.65, 'bench': 22.26},
+                        'period3Year': {'model': 36.34, 'bench': 55.22}
                     },
                     'monthly': {
-                        'period': [ '2023-03-21', '2023-04-01', '2023-05-01', ... ],
-                        'model': [ 2.6, 2.45, -4.34, ... ],
-                        'bench': [ 2.43, -0.38, -2.5, ... ]
+                        'period': ['2023-03-21', '2023-04-01', '2023-05-01', ...],
+                        'model': [2.6, 2.45, -4.34, ...],
+                        'bench': [2.43, -0.38, -2.5, ...]
                     },
                     'yearly': {
-                        'period': [ '2023-03-21', '2024-01-01', '2025-01-01', ... ],
-                        'model': [ 12.46, 11.23, 4.27, ... ],
-                        'bench': [ 15.34, 17.42, 8.54, ... ]
+                        'period': ['2023-03-21', '2024-01-01', '2025-01-01', ...],
+                        'model': [12.46, 11.23, 4.27, ...],
+                        'bench': [15.34, 17.42, 8.54, ...]
                     },
                     'weekly': {
-                        'period': [ '2023-03-21', '2023-03-25', '2023-04-01', ... ],
-                        'model': [ 0.45, 2.14, 0.97, ... ],
-                        'bench': [ -1.95, 4.46, -1.51, ... ]
+                        'period': ['2023-03-21', '2023-03-25', '2023-04-01', ...],
+                        'model': [0.45, 2.14, 0.97, ...],
+                        'bench': [-1.95, 4.46, -1.51, ...]
                     }
                 },
                 'trading': {
@@ -887,138 +887,138 @@ class Client:
                         'overallWinners': 64.52
                     },
                     'realized': {
-                        'trades': { 'all': 31, 'winners': 22, 'losers': 9 },
-                        'avgReturn': { 'all': 14.05, 'winners': 24.33, 'losers': -11.08 },
-                        'avgDaysHeld': { 'all': 332.58, 'winners': 334.41, 'losers': 328.11 },
-                        'totalAmount': { 'all': 19536.34, 'winners': 23108.34, 'losers': -3572.01 },
-                        'biggestAmount': { 'winners': 3744.6, 'losers': -840.28 },
-                        'biggestPct': { 'winners': 100.74, 'losers': -23.96 }
+                        'trades': {'all': 31, 'winners': 22, 'losers': 9},
+                        'avgReturn': {'all': 14.05, 'winners': 24.33, 'losers': -11.08},
+                        'avgDaysHeld': {'all': 332.58, 'winners': 334.41, 'losers': 328.11},
+                        'totalAmount': {'all': 19536.34, 'winners': 23108.34, 'losers': -3572.01},
+                        'biggestAmount': {'winners': 3744.6, 'losers': -840.28},
+                        'biggestPct': {'winners': 100.74, 'losers': -23.96}
                     },
                     'unrealized': {
-                        'trades': { 'all': 31, 'winners': 18, 'losers': 13 },
-                        'avgReturn': { 'all': 11.44, 'winners': 28.35, 'losers': -11.98 },
-                        'avgDaysHeld': { 'all': 895.68, 'winners': 963.94, 'losers': 801.15 },
-                        'totalAmount': { 'all': 11034.44, 'winners': 16848.05, 'losers': -5813.61 },
-                        'biggestAmount': { 'winners': 3435.76, 'losers': -1181.39 },
-                        'biggestPct': { 'winners': 108.6, 'losers': -34.52 }
+                        'trades': {'all': 31, 'winners': 18, 'losers': 13},
+                        'avgReturn': {'all': 11.44, 'winners': 28.35, 'losers': -11.98},
+                        'avgDaysHeld': {'all': 895.68, 'winners': 963.94, 'losers': 801.15},
+                        'totalAmount': {'all': 11034.44, 'winners': 16848.05, 'losers': -5813.61},
+                        'biggestAmount': {'winners': 3435.76, 'losers': -1181.39},
+                        'biggestPct': {'winners': 108.6, 'losers': -34.52}
                     }
                 },
                 'riskMeasurements': {
                     'daily': {
                         'trailing3Year': {
-                            'totalReturn': { 'model': 36.02, 'bench': 54.18 },
-                            'annualizedReturn': { 'model': 10.82, 'bench': 15.55 },
-                            'maxDrawdown': { 'model': -10.09, 'bench': -26.65 },
-                            'periodSamples': { 'model': 781.0, 'bench': 781.0 },
-                            'standardDeviation': { 'model': 10.93, 'bench': 20.28 },
-                            'sharpeRatio': { 'model': 0.68, 'bench': 0.63 },
-                            'sortinoRatio': { 'model': 0.94, 'bench': 0.9 },
-                            'benchCorrel': { 'model': 0.29 },
-                            'rSquared': { 'model': 0.08 },
-                            'beta': { 'model': 0.15 },
-                            'alpha': { 'model': 5.61 }
+                            'totalReturn': {'model': 36.02, 'bench': 54.18},
+                            'annualizedReturn': {'model': 10.82, 'bench': 15.55},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 781.0, 'bench': 781.0},
+                            'standardDeviation': {'model': 10.93, 'bench': 20.28},
+                            'sharpeRatio': {'model': 0.68, 'bench': 0.63},
+                            'sortinoRatio': {'model': 0.94, 'bench': 0.9},
+                            'benchCorrel': {'model': 0.29},
+                            'rSquared': {'model': 0.08},
+                            'beta': {'model': 0.15},
+                            'alpha': {'model': 5.61}
                         },
                         'sinceInception': {
-                            'totalReturn': { 'model': 41.18, 'bench': 73.18 },
-                            'annualizedReturn': { 'model': 10.57, 'bench': 17.35 },
-                            'maxDrawdown': { 'model': -10.09, 'bench': -26.65 },
-                            'periodSamples': { 'model': 895.0, 'bench': 895.0 },
-                            'standardDeviation': { 'model': 10.62, 'bench': 19.65 },
-                            'sharpeRatio': { 'model': 0.67, 'bench': 0.72 },
-                            'sortinoRatio': { 'model': 0.93, 'bench': 1.02 },
-                            'benchCorrel': { 'model': 0.31 },
-                            'rSquared': { 'model': 0.1 },
-                            'beta': { 'model': 0.17 },
-                            'alpha': { 'model': 4.86 }
+                            'totalReturn': {'model': 41.18, 'bench': 73.18},
+                            'annualizedReturn': {'model': 10.57, 'bench': 17.35},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 895.0, 'bench': 895.0},
+                            'standardDeviation': {'model': 10.62, 'bench': 19.65},
+                            'sharpeRatio': {'model': 0.67, 'bench': 0.72},
+                            'sortinoRatio': {'model': 0.93, 'bench': 1.02},
+                            'benchCorrel': {'model': 0.31},
+                            'rSquared': {'model': 0.1},
+                            'beta': {'model': 0.17},
+                            'alpha': {'model': 4.86}
                         }
                     },
                     'weekly': {
                         'trailing3Year': {
-                            'totalReturn': { 'model': 36.02, 'bench': 54.18 },
-                            'annualizedReturn': { 'model': 10.82, 'bench': 15.55 },
-                            'maxDrawdown': { 'model': -10.09, 'bench': -26.65 },
-                            'periodSamples': { 'model': 155.0, 'bench': 155.0 },
-                            'standardDeviation': { 'model': 10.25, 'bench': 19.05 },
-                            'sharpeRatio': { 'model': 0.62, 'bench': 0.58 },
-                            'sortinoRatio': { 'model': 0.85, 'bench': 0.82 },
-                            'benchCorrel': { 'model': 0.4 },
-                            'rSquared': { 'model': 0.16 },
-                            'beta': { 'model': 0.22 },
-                            'alpha': { 'model': 4.04 }
+                            'totalReturn': {'model': 36.02, 'bench': 54.18},
+                            'annualizedReturn': {'model': 10.82, 'bench': 15.55},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 155.0, 'bench': 155.0},
+                            'standardDeviation': {'model': 10.25, 'bench': 19.05},
+                            'sharpeRatio': {'model': 0.62, 'bench': 0.58},
+                            'sortinoRatio': {'model': 0.85, 'bench': 0.82},
+                            'benchCorrel': {'model': 0.4},
+                            'rSquared': {'model': 0.16},
+                            'beta': {'model': 0.22},
+                            'alpha': {'model': 4.04}
                         },
                         'sinceInception': {
-                            'totalReturn': { 'model': 41.18, 'bench': 73.18 },
-                            'annualizedReturn': { 'model': 10.57, 'bench': 17.35 },
-                            'maxDrawdown': { 'model': -10.09, 'bench': -26.65 },
-                            'periodSamples': { 'model': 178.0, 'bench': 178.0 },
-                            'standardDeviation': { 'model': 10.14, 'bench': 18.39 },
-                            'sharpeRatio': { 'model': 0.56, 'bench': 0.75 },
-                            'sortinoRatio': { 'model': 0.77, 'bench': 1.06 },
-                            'benchCorrel': { 'model': 0.42 },
-                            'rSquared': { 'model': 0.17 },
-                            'beta': { 'model': 0.23 },
-                            'alpha': { 'model': 2.53 }
+                            'totalReturn': {'model': 41.18, 'bench': 73.18},
+                            'annualizedReturn': {'model': 10.57, 'bench': 17.35},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 178.0, 'bench': 178.0},
+                            'standardDeviation': {'model': 10.14, 'bench': 18.39},
+                            'sharpeRatio': {'model': 0.56, 'bench': 0.75},
+                            'sortinoRatio': {'model': 0.77, 'bench': 1.06},
+                            'benchCorrel': {'model': 0.42},
+                            'rSquared': {'model': 0.17},
+                            'beta': {'model': 0.23},
+                            'alpha': {'model': 2.53}
                         }
                     },
                     'monthly': {
                         'trailing3Year': {
-                            'totalReturn': { 'model': 36.02, 'bench': 54.18 },
-                            'annualizedReturn': { 'model': 10.82, 'bench': 15.55 },
-                            'maxDrawdown': { 'model': -10.09, 'bench': -26.65 },
-                            'periodSamples': { 'model': 35.0, 'bench': 35.0 },
-                            'standardDeviation': { 'model': 11.96, 'bench': 18.81 },
-                            'sharpeRatio': { 'model': 0.47, 'bench': 0.55 },
-                            'sortinoRatio': { 'model': 0.64, 'bench': 0.77 },
-                            'benchCorrel': { 'model': 0.4 },
-                            'rSquared': { 'model': 0.16 },
-                            'beta': { 'model': 0.25 },
-                            'alpha': { 'model': 3.06 }
+                            'totalReturn': {'model': 36.02, 'bench': 54.18},
+                            'annualizedReturn': {'model': 10.82, 'bench': 15.55},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 35.0, 'bench': 35.0},
+                            'standardDeviation': {'model': 11.96, 'bench': 18.81},
+                            'sharpeRatio': {'model': 0.47, 'bench': 0.55},
+                            'sortinoRatio': {'model': 0.64, 'bench': 0.77},
+                            'benchCorrel': {'model': 0.4},
+                            'rSquared': {'model': 0.16},
+                            'beta': {'model': 0.25},
+                            'alpha': {'model': 3.06}
                         },
                         'sinceInception': {
-                            'totalReturn': { 'model': 41.18, 'bench': 73.18 },
-                            'annualizedReturn': { 'model': 10.57, 'bench': 17.35 },
-                            'maxDrawdown': { 'model': -10.09, 'bench': -26.65 },
-                            'periodSamples': { 'model': 40.0, 'bench': 40.0 },
-                            'standardDeviation': { 'model': 11.76, 'bench': 18.42 },
-                            'sharpeRatio': { 'model': 0.4, 'bench': 0.64 },
-                            'sortinoRatio': { 'model': 0.54, 'bench': 0.9 },
-                            'benchCorrel': { 'model': 0.42 },
-                            'rSquared': { 'model': 0.18 },
-                            'beta': { 'model': 0.27 },
-                            'alpha': { 'model': 1.51 }
+                            'totalReturn': {'model': 41.18, 'bench': 73.18},
+                            'annualizedReturn': {'model': 10.57, 'bench': 17.35},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 40.0, 'bench': 40.0},
+                            'standardDeviation': {'model': 11.76, 'bench': 18.42},
+                            'sharpeRatio': {'model': 0.4, 'bench': 0.64},
+                            'sortinoRatio': {'model': 0.54, 'bench': 0.9},
+                            'benchCorrel': {'model': 0.42},
+                            'rSquared': {'model': 0.18},
+                            'beta': {'model': 0.27},
+                            'alpha': {'model': 1.51}
                         }
                     },
                     'yearly': {
                         'sinceInception': {
-                            'totalReturn': { 'model': 41.18, 'bench': 73.18 },
-                            'annualizedReturn': { 'model': 10.57, 'bench': 17.35 },
-                            'maxDrawdown': { 'model': -10.09, 'bench': -26.65 },
-                            'periodSamples': { 'model': 2.0, 'bench': 2.0 },
-                            'standardDeviation': { 'model': 4.92, 'bench': 6.28 },
-                            'sharpeRatio': { 'model': 0.61, 'bench': 1.31 },
-                            'sortinoRatio': { 'model': 0.86, 'bench': 1.85 },
-                            'benchCorrel': { 'model': 1.0 },
-                            'rSquared': { 'model': 1.0 },
-                            'beta': { 'model': 0.76 },
-                            'alpha': { 'model': -3.23 }
+                            'totalReturn': {'model': 41.18, 'bench': 73.18},
+                            'annualizedReturn': {'model': 10.57, 'bench': 17.35},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 2.0, 'bench': 2.0},
+                            'standardDeviation': {'model': 4.92, 'bench': 6.28},
+                            'sharpeRatio': {'model': 0.61, 'bench': 1.31},
+                            'sortinoRatio': {'model': 0.86, 'bench': 1.85},
+                            'benchCorrel': {'model': 1.0},
+                            'rSquared': {'model': 1.0},
+                            'beta': {'model': 0.76},
+                            'alpha': {'model': -3.23}
                         }
                     }
                 }
             },
             'dailyPerf': {
-                'date': [ '2023-03-21', '2023-03-22', '2023-03-23', ... ],
-                'cash': [ 100000.0, 41605.29, 41605.29, ... ],
-                'mktValLong': [ 0.0, 58091.01, 57904.3, ... ],
-                'mktValShort': [ 0.0, 0.0, 0.0, ... ],
-                'mktValHedge': [ 0.0, 0.0, 0.0, ... ],
-                'cashAdded': [ 100000.0, 0.0, 0.0, ... ],
-                'totalEquity': [ 100000.0, 99696.3, 99509.59, ... ],
-                'accruedDiv': [ 0.0, 0.0, 67.68, ... ],
-                'leverageRatio': [ 0.0, 0.58, 0.58, ... ],
-                'posCnt': [ 0, 18, 18, ... ],
-                'bench': [ 18097.43, 17684.48, 17626.62, ... ],
-                'ret': [ 100.0, 99.7, 99.58, ... ],
-                'retBench': [ 100.0, 97.72, 97.4, ... ]
+                'date': ['2023-03-21', '2023-03-22', '2023-03-23', ...],
+                'cash': [100000.0, 41605.29, 41605.29, ...],
+                'mktValLong': [0.0, 58091.01, 57904.3, ...],
+                'mktValShort': [0.0, 0.0, 0.0, ...],
+                'mktValHedge': [0.0, 0.0, 0.0, ...],
+                'cashAdded': [100000.0, 0.0, 0.0, ...],
+                'totalEquity': [100000.0, 99696.3, 99509.59, ...],
+                'accruedDiv': [0.0, 0.0, 67.68, ...],
+                'leverageRatio': [0.0, 0.58, 0.58, ...],
+                'posCnt': [0, 18, 18, ...],
+                'bench': [18097.43, 17684.48, 17626.62, ...],
+                'ret': [100.0, 99.7, 99.58, ...],
+                'retBench': [100.0, 97.72, 97.4, ...]
             }
         }
         """
@@ -1101,7 +1101,7 @@ class Client:
                         'settleDt': '2026-06-30'
                     },
                     ...
-                ],
+                ]
             }
         """
 
@@ -1152,9 +1152,7 @@ class Client:
             ...     update_existing=False,
             ...     make_rebal_dt_curr=False
             ... )
-            {
-                'processedTransactions': 34
-            }
+            {'processedTransactions': 34}
         """
 
         get_params = []
@@ -1303,15 +1301,11 @@ class Client:
                     - rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
                     - buyRules (list[dict]): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
                     - sellRules (list[dict]): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
-                    - rebalance (dict): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
-
+                    - rebalance (dict[str, Any]): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
                         - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
                         - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
-                        - Frequency allowed values: 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                        - Allowed values for 'rebalFreq' and 'reconFreq': 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
                           'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
-
-        Returns:
-            A dictionary containing the operation's cost and remaining quota.
 
         Examples:
             >>> params = {
@@ -1324,7 +1318,7 @@ class Client:
             ...             "name": "Diverse",
             ...             "formula": "SecWeight < 30",
             ...             "disabled": True
-            ...         }
+            ...         },
             ...         ...
             ...     ],
             ...     "sellRules": [
@@ -1332,7 +1326,7 @@ class Client:
             ...             "name": "main rank",
             ...             "formula": "rank < 70 and NoBars > 60",
             ...             "disabled": True
-            ...         }
+            ...         },
             ...         ...
             ...     ],
             ...     "rebalance": {
@@ -1366,8 +1360,8 @@ class Client:
                     - rebalance (dict[str, Any]): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
                         - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
                         - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
-                        - Frequency allowed values: 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
-                        'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
+                        - Allowed values for 'rebalFreq' and 'reconFreq': 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                          'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
 
         Examples:
             >>> params = {
@@ -1380,7 +1374,7 @@ class Client:
             ...             "name": "Diverse",
             ...             "formula": "SecWeight < 30",
             ...             "disabled": True
-            ...         }
+            ...         },
             ...         ...
             ...     ],
             ...     "sellRules": [
@@ -1388,7 +1382,7 @@ class Client:
             ...             "name": "main rank",
             ...             "formula": "rank < 70 and NoBars > 60",
             ...             "disabled": True
-            ...         }
+            ...         },
             ...         ...
             ...     ],
             ...     "rebalance": {
@@ -1422,11 +1416,10 @@ class Client:
                     - rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
                     - buyRules (list[dict]): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
                     - sellRules (list[dict]): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
-                    - rebalance (dict): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
-
+                    - rebalance (dict[str, Any]): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
                         - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
                         - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
-                        - Frequency allowed values: 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                        - Allowed values for 'rebalFreq' and 'reconFreq': 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
                           'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
 
         Examples:
@@ -1440,7 +1433,7 @@ class Client:
             ...             "name": "Diverse",
             ...             "formula": "SecWeight < 30",
             ...             "disabled": True
-            ...         }
+            ...         },
             ...         ...
             ...     ],
             ...     "sellRules": [
@@ -1448,7 +1441,7 @@ class Client:
             ...             "name": "main rank",
             ...             "formula": "rank < 70 and NoBars > 60",
             ...             "disabled": True
-            ...         }
+            ...         },
             ...         ...
             ...     ],
             ...     "rebalance": {
@@ -1491,7 +1484,7 @@ class Client:
             ...             "itemUid": 3221,
             ...             "type": "PTF",
             ...             "relativeWeight": 0.4
-            ...         }
+            ...         },
             ...         ...
             ...     ],
             ...     "startDt": "2020-01-01",
@@ -1526,16 +1519,14 @@ class Client:
             >>> params = {
             ...     "pitMethod": "Prelim",
             ...     "op": "Rebal",
-            ...     "reject": [
-            ...         231212,
-            ...     ],
+            ...     "reject": [231212],
             ...     "figi": "Share Class",
             ...     "minRebalTran": 0.1
             ... }
             >>> client.strategy_rebalance(1073741824, params)
             {
                 'ranks': [
-                    [ 1893, 74.16950988769531 ],
+                    [1893, 74.16950988769531],
                     ...
                 ],
                 'recs': [
