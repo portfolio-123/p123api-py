@@ -701,32 +701,32 @@ class Client:
             >>> client.rank_ranks(params, to_pandas=False)
             {
                 'dt': '2020-04-18',
-                'p123Uids': [ 774 ],
-                'tickers': [ 'AAPL' ],
-                'names': [ 'Apple, Inc.' ],
-                'naCnt': [ 16 ],
-                'finalStmt': [ true ],
-                'ranks': [ 97.872 ],
+                'p123Uids': [774],
+                'tickers': ['AAPL' ],
+                'names': ['Apple, Inc.' ],
+                'naCnt': [16 ],
+                'finalStmt': [true ],
+                'ranks': [97.872 ],
                 'nodes': {
-                    'ids': [ 0, 1, 6, ...  ],
+                    'ids': [0, 1, 6, ...],
                     'names': [
                         'Industry performance comparison',
                         'TechRank',
                         'Valuation',
                         ...
                     ],
-                    'parents': [ 0, 0, 0, ...  ],
-                    'weights': [ 100.0, 40.0, 40.0, ...  ],
+                    'parents': [0, 0, 0, ...],
+                    'weights': [100.0, 40.0, 40.0, ...],
                     'ranks': [
-                        [ 97.872, 97.642, 69.321, ...  ],
+                        [97.872, 97.642, 69.321, ...],
                         ...
                     ]
                 },
                 'additionalData': [
-                    [ 284.43, 286.69, 282.8 ],
+                    [284.43, 286.69, 282.],
                     ...
                 ],
-                'figi': [ "BBG001S5N8V8" ]
+                'figi': ["BBG001S5N8V8"]
             }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + RANK_RANKS_PATH, json=params)
@@ -820,7 +820,7 @@ class Client:
             >>> client.rank_perf(params)
             {
                 'benchmarkAnnRet': 13.6885,
-                'bucketAnnRet': [ 2.1824, 5.9422, 6.8893, ...  ]
+                'bucketAnnRet': [2.1824, 5.9422, 6.8893, ...]
             }
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PERF_PATH, json=params)
@@ -831,9 +831,6 @@ class Client:
 
         Args:
             rank_id (int): The ID of the ranking system to touch.
-
-        Returns:
-            A string confirming the touch operation.
 
         Examples:
             >>> client.rank_touch(107374)
