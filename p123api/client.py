@@ -1044,7 +1044,6 @@ class Client:
             data (str | IO[str]): Delimited content string or file-like containing delimited content. Must not exceed 100 MB or 5 million lines.
             column_separator (Literal[",", ";", "\t"]): Separator character between columns. Defaults to comma.
             existing_data (Literal["overwrite", "skip", "delete"]): Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
-            existing_data (Literal["overwrite", "skip", "delete"]): Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
                 Allowed values include 'overwrite' (overwrite stored values), 'skip' (retain stored values), or 'delete' (clear before storing uploaded data).
             date_format (str): Date format. Defaults to ``yyyy-mm-dd``.
             decimal_separator (Literal[".", ","]): Decimal separator. Defaults to period. If comma is used, the thousands separator, if used, is assumed to be period.
@@ -1101,7 +1100,7 @@ class Client:
             An object containing the identifier for the stock factor operation.
 
         Examples:
-            >>> params = { "name": "My Custom Factor", "maxDays": 5, "fhistRange": 0 }
+            >>> params = {"name": "My Custom Factor", "maxDays": 5, "fhistRange": 0}
             >>> client.stock_factor_create_update(params=params)
             StockFactorResult(factorId=98765)
         """
@@ -1270,10 +1269,10 @@ class Client:
         Examples:
             >>> client.stock_factor_download(23124)
             {
-                'dates': [ '2026-06-25', ...  ],
-                'tickers': [ 'IBM', ...  ],
-                'values': [ 0.1, ...  ],
-                'p123Uids': [ 107374, ...  ]
+                'dates': ['2026-06-25', ...],
+                'tickers': ['IBM', ...],
+                'values': [0.1, ...],
+                'p123Uids': [107374, ...]
             }
         """
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
