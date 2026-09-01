@@ -268,14 +268,14 @@ class Client:
             ... }
             >>> client.screen_rolling_backtest(params, to_pandas=False)
             {
-                'columns': [ '#', 'As Of Dt', 'Rank Dt', ...  ],
+                'columns': ['#', 'As Of Dt', 'Rank Dt', ...],
                 'rows': [
-                    [ 14, '2020-11-15', '2020-11-14', ...  ],
+                    [14, '2020-11-15', '2020-11-14', ...],
                     ...
                 ],
-                'average': [ null, null, null, ...  ],
-                'upMarkets': [ null, 14.0, null, ...  ],
-                'downMarkets': [ null, 0.0, null, ...  ]
+                'average': [null, null, null, ...],
+                'upMarkets': [null, 14.0, null, ...],
+                'downMarkets': [null, 0.0, null, ...]
             }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH, json=params)
@@ -367,21 +367,21 @@ class Client:
                     }
                 },
                 'results': {
-                    'columns': [ '#', 'As Of Dt', 'Rank Dt', ...  ],
+                    'columns': ['#', 'As Of Dt', 'Rank Dt', ...],
                     'rows': [
-                        [ 14, '2020-12-27', '2020-12-26', ...  ],
+                        [14, '2020-12-27', '2020-12-26', ...],
                         ...
                     ],
-                    'average': [ null, null, null, ...  ],
-                    'upMarkets': [ null, 9.0, null, ...  ],
-                    'downMarkets': [ null, 5.0, null, ...  ]
+                    'average': [null, null, null, ...],
+                    'upMarkets': [null, 9.0, null, ...],
+                    'downMarkets': [null, 5.0, null, ...]
                 },
                 'chart': {
-                    'dates': [ '2020-01-01', '2020-01-02', '2020-01-03', ...  ],
-                    'screenReturns': [ 100.0, 99.75, 99.29, ...  ],
-                    'benchReturns': [ 100.0, 100.0, 99.24, ...  ],
-                    'turnoverPct': [ 0.0, 0.0, 0.0, ...  ],
-                    'positionCnt': [ 0.0, 3696.0, 3696.0, ...  ]
+                    'dates': ['2020-01-01', '2020-01-02', '2020-01-03', ...],
+                    'screenReturns': [100.0, 99.75, 99.29, ...],
+                    'benchReturns': [100.0, 100.0, 99.24, ...],
+                    'turnoverPct': [0.0, 0.0, 0.0, ...],
+                    'positionCnt': [0.0, 3696.0, 3696.0, ...]
                 }
             }
         """
@@ -486,9 +486,9 @@ class Client:
             ... }
             >>> client.screen_run(params, to_pandas=False)
             {
-                'columns': [ 'P123 UID', 'Ticker', 'Name', ...  ],
+                'columns': ['P123 UID', 'Ticker', 'Name', ...],
                 'rows': [
-                    [ 774, 'AAPL', 'Apple, Inc.', ...  ],
+                    [774, 'AAPL', 'Apple, Inc.', ...],
                     ...
                 ]
             }
@@ -590,14 +590,14 @@ class Client:
             ... }
             >>> client.data(params)
             {
-                'dates': [ '2025-02-01', '2025-02-08', '2025-02-15', ...  ],
+                'dates': ['2025-02-01', '2025-02-08', '2025-02-15', ...],
                 'items': {
                     '4737': {
                         'ticker': 'IBM',
                         'figi': 'BBG000BLNQ16',
                         'series': [
-                            [ 244.283, 241.073, 251.277, ...  ],
-                            [ 5.043, 4.967, 5.143, ...  ]
+                            [244.283, 241.073, 251.277, ...],
+                            [5.043, 4.967, 5.143, ...]
                         ]
                     }
                 }
