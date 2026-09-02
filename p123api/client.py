@@ -1135,7 +1135,7 @@ class Client:
 
         Args:
             strategy_id (int): The ID of the strategy or book.
-            data (str | IO[str]): The transaction data as a string or file-like object.
+            data (str | IO[bytes]): The transaction data as a string or file-like object.
             content_type (str): The format of the data ('text/csv' or 'text/tsv'). Defaults to 'text/csv'.
             update_existing (bool): If True, updates existing transactions. Defaults to False.
             make_rebal_dt_curr (bool): If True, sets the rebalancing date to the current date. Defaults to False.
@@ -1249,11 +1249,11 @@ class Client:
             rules, and rebalance settings).
 
         Examples:
-            >>> client.strategy_trading_system(1073741824)
+            >>> client.strategy_trading_system(1414986)
             {
                 'tradingSystem': {
                     'startingCapital': 100000.0,
-                    'useMargin': false,
+                    'useMargin': False,
                     'universeUid': 0,
                     'universe': 'United States (Incl. Foreign Primary)',
                     'rankingSystemUid': 72883,
@@ -1268,7 +1268,7 @@ class Client:
                         {
                             'name': 'Defensive Buss.',
                             'formula': 'Eval(sma(5,0,#SPEPSCY)>sma(21,0,#SPEPSCY) and close(0,#SPRP)>1, Price>=0, GICS(5510,3520,3510, 20201050))',
-                            'disabled': false
+                            'disabled': False
                         },
                         ...
                     ],
@@ -1276,7 +1276,7 @@ class Client:
                         {
                             'name': 'Sell Rule',
                             'formula': 'Eval((sma(5,0,#SPEPSCY)<sma(21,0,#SPEPSCY) or close(0,#SPRP)<1),Rank<=90 , Rank<=80)',
-                            'disabled': false
+                            'disabled': False
                         },
                         ...
                     ]
