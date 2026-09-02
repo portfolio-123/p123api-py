@@ -716,39 +716,15 @@ class Client:
             ... }
             >>> client.data_universe(params, to_pandas=False)
             {
-                "dt": "2024-07-01",
-                "p123Uids": [
-                    159,
-                    115627,
-                    26968,
+                'dt': '024-07-01',
+                'p123Uids': [159, 115627, 26968, ...],
+                'tickers': ['RAMP', 'BHVN', 'AROC', ...],
+                'data': [
+                    [30.94, 34.71, 20.22, ...],
                     ...
                 ],
-                "tickers": [
-                    "RAMP",
-                    "BHVN",
-                    "AROC",
-                    ...
-                ],
-                "data": [
-                    [
-                        30.94,
-                        34.71,
-                        20.22,
-                        ...
-                    ]
-                ],
-                "names": [
-                    "LiveRamp Holdings, Inc.",
-                    "Biohaven Ltd.",
-                    "Archrock, Inc.",
-                    ...
-                ],
-                "figi": [
-                    "BBG001S5NCJ3",
-                    "BBG017BXV3R8",
-                    "BBG001SVDK72"
-                    ...
-                ]
+                'names': ['LiveRamp Holdings, Inc.', 'Biohaven Ltd.', 'Archrock, Inc.', ...],
+                'figi': ['BBG001S5NCJ3', 'BBG017BXV3R8', 'BBG001SVDK72' ...]
             }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + DATA_UNIVERSE_PATH, json=params)
