@@ -1041,7 +1041,7 @@ class Client:
 
         Args:
             factor_id (int): Unique identifier of the stock factor.
-            data (str | IO[str]): Delimited content string or file-like containing delimited content. Must not exceed 100 MB or 5 million lines.
+            data (str | IO[bytes]): Delimited content string or file-like containing delimited content. Must not exceed 100 MB or 5 million lines.
             column_separator (Literal[",", ";", "\t"]): Separator character between columns. Defaults to comma.
             existing_data (Literal["overwrite", "skip", "delete"]): Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
                 Allowed values include 'overwrite' (overwrite stored values), 'skip' (retain stored values), or 'delete' (clear before storing uploaded data).
