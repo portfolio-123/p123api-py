@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from io import BufferedIOBase, IOBase, RawIOBase
 import requests
 import time
 from string import Template
-from typing import Any, IO, Literal, TYPE_CHECKING, overload
+from typing import Any, IO, Literal, TYPE_CHECKING, cast, overload
 from typing_extensions import deprecated
 
 if TYPE_CHECKING:
@@ -104,7 +105,6 @@ class Client:
 
         self._auth_params = {"apiId": str(api_id), "apiKey": api_key, **auth_extra}
         self._session = requests.Session()
-        self._method_map = {"GET": self._session.get, "POST": self._session.post, "DELETE": self._session.delete}
 
     def __enter__(self):
         return self
@@ -137,9 +137,10 @@ class Client:
         """
         self._session.headers.clear()
         with req_with_retry(
-            self._session.post,
+            "POST",
+            self._endpoint + AUTH_PATH,
+            self._session,
             self._max_req_retries,
-            url=self._endpoint + AUTH_PATH,
             json=self._auth_params,
             verify=self._verify_requests,
             timeout=30,
@@ -189,9 +190,10 @@ class Client:
             if self._session.headers.get("Authorization") is None:
                 self.auth()
             with req_with_retry(
-                self._method_map[method],
+                method,
+                url,
+                self._session,
                 self._max_req_retries,
-                url=url,
                 json=json,
                 params=params,
                 verify=self._verify_requests,
@@ -1418,7 +1420,7 @@ class Client:
     def strategy_transaction_import(
         self,
         strategy_id: int,
-        data: str | IO[str],
+        data: str | IO[bytes],
         content_type: Literal["text/csv", "text/tsv"] = "text/csv",
         update_existing=False,
         make_rebal_dt_curr=False,
@@ -1890,7 +1892,7 @@ class Client:
     def stock_factor_upload(
         self,
         factor_id: int,
-        data: str | IO[str],
+        data: str | IO[bytes],
         column_separator: Literal[",", ";", "\t"] = ",",
         existing_data: Literal["overwrite", "skip", "delete"] = "overwrite",
         date_format="yyyy-mm-dd",
@@ -2008,7 +2010,7 @@ class Client:
     def data_series_upload(
         self,
         series_id: int,
-        data: str | IO[str],
+        data: str | IO[bytes],
         existing_data: Literal["overwrite", "skip", "delete"] = "overwrite",
         date_format="yyyy-mm-dd",
         decimal_separator: Literal[".", ","] = ".",
@@ -2395,17 +2397,65 @@ class Client:
         )
 
 
-def req_with_retry(req: Callable[..., requests.Response], max_tries=5, **kwargs):
+def req_with_retry(
+    method: str,
+    url,
+    session: requests.Session,
+    max_tries=5,
+    data: Any = None,
+    json: Any = None,
+    params: Any = None,
+    verify: Any = None,
+    timeout: Any = None,
+    headers: Any = None,
+):
     tries = 0
+    pos = None
+    match data:
+        case str() | bytes() | None:
+            pass
+        case RawIOBase():
+            if data.seekable():
+                pos = data.tell()
+            else:
+                data = data.read()
+        case BufferedIOBase():
+            if data.seekable():
+                pos = data.tell()
+            else:
+                chunks = []
+                while chunk := data.read():
+                    chunks.append(chunk)
+                data = b"".join(chunks)
+        case _:
+            data = data.read()
+
     while True:
         if tries > 0:
             time.sleep(2 * tries)
+
         try:
-            resp = req(**kwargs)
+
+            if data and not isinstance(data, (str, bytes)):
+                if isinstance(data, (BufferedIOBase, RawIOBase)):
+                    try:
+                        data.seek(0)
+                    except Exception:
+                        if isinstance(data, RawIOBase):
+                            data = data.readall()
+                        else:
+                            data = data.read()
+                else:
+                    data = data.read()
+
+            resp = session.request(
+                method=method, url=url, data=data, json=json, params=params, verify=verify, timeout=timeout, headers=headers
+            )
             exception = None
         except requests.ConnectionError as e:
             resp = None
             exception = e
+
         if resp is not None:
             if resp.status_code < 500:
                 return resp
@@ -2413,4 +2463,6 @@ def req_with_retry(req: Callable[..., requests.Response], max_tries=5, **kwargs)
         tries += 1
         if tries >= max_tries:
             break
+        if pos is not None:
+            cast(IOBase, data).seek(pos)
     raise ClientException("Cannot connect to API") from exception
