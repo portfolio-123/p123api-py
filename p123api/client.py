@@ -225,10 +225,59 @@ class Client:
 
     def screen_rolling_backtest(self, params: dict, to_pandas=False):
         """
-        Screen rolling backtest
-        :param params:
-        :param to_pandas:
-        :return:
+        Executes a screen rolling backtest.
+
+        Args:
+            params (dict[str, Any]): A dictionary of parameters for the rolling backtest.
+                Key arguments include::
+
+                    - screen (int | dict): Required. The screen ID or screen definition parameters.
+                      For more information about and examples of using a dict, see the article "API functions: Screen" in the Knowledge Base.
+                    - startDt (str): Required. Backtest start date (yyyy-mm-dd).
+                    - endDt (str): Backtest end date (yyyy-mm-dd).
+                    - frequency (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                      'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                      'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                    - holdingPeriod (int): Holding period in days (1 to 730). Defaults to 182.
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
+                    - transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average). Defaults to 1.
+                    - slippage (float): Slippage percentage. Defaults to 0.25.
+                    - longWeight (float): Long weight percentage. Defaults to 100.
+                    - shortWeight (float): Short weight percentage. Defaults to 100.
+                    - maxPosPct (float): Maximum position percentage (0 to 100). Limits the allocation to each position in the returned screen,
+                      working in conjunction with the maximum number of holdings. Defaults to 0.
+            to_pandas (bool): If True, converts the 'rows' and 'columns' of the result into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the backtest results, including columns, rows,
+            averages and up/down market metrics (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Prelim",
+            ...     "precision": 2,
+            ...     "screen": 254671,
+            ...     "transPrice": 1,
+            ...     "maxPosPct": 0,
+            ...     "slippage": 0.25,
+            ...     "longWeight": 100,
+            ...     "shortWeight": 100,
+            ...     "startDt": "2019-11-20",
+            ...     "endDt": "2020-11-20",
+            ...     "frequency": "Every Week",
+            ...     "holdingPeriod": 182
+            ... }
+            >>> client.screen_rolling_backtest(params, to_pandas=False)
+            {
+                'columns': ['#', 'As Of Dt', 'Rank Dt', ...],
+                'rows': [
+                    [14, '2020-11-15', '2020-11-14', ...],
+                    ...
+                ],
+                'average': [null, null, null, ...],
+                'upMarkets': [null, 14.0, null, ...],
+                'downMarkets': [null, 0.0, null, ...]
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_ROLLING_BACKTEST_PATH, json=params)
 
@@ -248,10 +297,95 @@ class Client:
 
     def screen_backtest(self, params: dict, to_pandas=False):
         """
-        Screen backtest
-        :param params:
-        :param to_pandas:
-        :return:
+        Executes a screen backtest.
+
+        Args:
+            params (dict): A dictionary of parameters for the screen backtest.
+                Key arguments include::
+
+                    - screen (int | dict): Required. The screen ID or screen definition parameters.
+                      For more information about and examples of using a dict, see the article "API functions: Screen" in the Knowledge Base.
+                    - startDt (str): Required. Backtest start date (yyyy-mm-dd).
+                    - endDt (str): Backtest end date (yyyy-mm-dd).
+                    - rebalFreq (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
+                      'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
+                      'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                    - riskStatsPeriod (str): Risk statistics period ('Monthly', 'Weekly', 'Daily'). Defaults to 'Monthly'.
+                    - rankTolerance (float): Rank tolerance. Defaults to 0.
+                    - carryCost (float): Carry cost percentage. Defaults to 1.5.
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
+                    - transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average). Defaults to 1.
+                    - slippage (float): Slippage percentage. Defaults to 0.25.
+                    - longWeight (float): Long weight percentage. Defaults to 100.
+                    - shortWeight (float): Short weight percentage. Defaults to 100.
+                    - maxPosPct (float): Maximum position percentage (0 to 100).
+                      Limits the allocation to each position in the returned screen, working in conjunction with the maximum number of holdings. Defaults to 0.
+            to_pandas (bool): If True, converts the tabular components of the results into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the backtest results, which includes performance stats (alpha, beta, Sharpe ratio, etc.),
+            tabular results, and charting data.
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Prelim",
+            ...     "precision": 2,
+            ...     "screen": 90108,
+            ...     "transPrice": 1,
+            ...     "maxPosPct": 0,
+            ...     "slippage": 0.25,
+            ...     "longWeight": 100,
+            ...     "shortWeight": 100,
+            ...     "startDt": "2026-06-24",
+            ...     "endDt": "2026-06-24",
+            ...     "rankTolerance": 0,
+            ...     "carryCost": 1.5,
+            ...     "rebalFreq": "Every 4 Weeks",
+            ...     "riskStatsPeriod": "Monthly"
+            ... }
+            >>> client.screen_backtest(params, to_pandas=False)
+            {
+                'stats': {
+                    'samples': 10,
+                    'correlation': 0.95,
+                    'r_squared': 0.9,
+                    'beta': 1.36,
+                    'alpha': -0.39,
+                    'port': {
+                        'standard_dev': 40.44,
+                        'sharpe_ratio': 0.64,
+                        'sortino_ratio': 0.84,
+                        'total_return': 20.58,
+                        'annualized_return': 20.6,
+                        'max_drawdown': -41.62
+                    },
+                    'bench': {
+                        'standard_dev': 28.31,
+                        'sharpe_ratio': 0.68,
+                        'sortino_ratio': 0.91,
+                        'total_return': 17.24,
+                        'annualized_return': 17.25,
+                        'max_drawdown': -33.72
+                    }
+                },
+                'results': {
+                    'columns': ['#', 'As Of Dt', 'Rank Dt', ...],
+                    'rows': [
+                        [14, '2020-12-27', '2020-12-26', ...],
+                        ...
+                    ],
+                    'average': [null, null, null, ...],
+                    'upMarkets': [null, 9.0, null, ...],
+                    'downMarkets': [null, 5.0, null, ...]
+                },
+                'chart': {
+                    'dates': ['2020-01-01', '2020-01-02', '2020-01-03', ...],
+                    'screenReturns': [100.0, 99.75, 99.29, ...],
+                    'benchReturns': [100.0, 100.0, 99.24, ...],
+                    'turnoverPct': [0.0, 0.0, 0.0, ...],
+                    'positionCnt': [0.0, 3696.0, 3696.0, ...]
+                }
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_BACKTEST_PATH, json=params)
 
@@ -328,10 +462,39 @@ class Client:
 
     def screen_run(self, params: dict, to_pandas=False):
         """
-        Screen run
-        :param params:
-        :param to_pandas:
-        :return:
+        Executes a screen run.
+
+        Args:
+            params (dict): A dictionary of parameters for the screen run.
+                Key arguments include::
+
+                    - screen (int | dict): Required. The screen ID or screen definition parameters.
+                      For more information about and examples of using a dict, see the article "API functions: Screen" in the Knowledge Base.
+                    - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Overrides for existing screens or sets for new screens (defaults to 'Complete').
+                    - precision (int): Fixed precision digits (2 to 8). Defaults to 2.
+                    - asOfDt (str): As of date (yyyy-mm-dd). Defaults to today.
+                    - endDt (str): End date (yyyy-mm-dd).
+            to_pandas (bool): If True, converts the tabular components of the results into a pandas DataFrame.
+
+        Returns:
+            A dictionary containing the screen run results, typically including columns and rows (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Prelim",
+            ...     "precision": 2,
+            ...     "screen": 10737,
+            ...     "asOfDt": "2020-01-08",
+            ...     "endDt": "2026-06-24"
+            ... }
+            >>> client.screen_run(params, to_pandas=False)
+            {
+                'columns': ['P123 UID', 'Ticker', 'Name', ...],
+                'rows': [
+                    [774, 'AAPL', 'Apple, Inc.', ...],
+                    ...
+                ]
+            }
         """
         ret = self._req_with_auth_fallback(url=self._endpoint + SCREEN_RUN_PATH, json=params)
 
@@ -430,29 +593,14 @@ class Client:
             ... }
             >>> client.data(params)
             {
-                "dates": [
-                    "2025-02-01",
-                    "2025-02-08",
-                    "2025-02-15",
-                    ...
-                ],
-                "items": {
-                    "4737": {
-                        "ticker": "IBM",
-                        "figi": "BBG000BLNQ16",
-                        "series": [
-                            [
-                                244.283,
-                                241.073,
-                                251.277,
-                                ...
-                            ],
-                            [
-                                5.043,
-                                4.967,
-                                5.143,
-                                ...
-                            ]
+                'dates': ['2025-02-01', '2025-02-08', '2025-02-15', ...],
+                'items': {
+                    '4737': {
+                        'ticker': 'IBM',
+                        'figi': 'BBG000BLNQ16',
+                        'series': [
+                            [244.283, 241.073, 251.277, ...],
+                            [5.043, 4.967, 5.143, ...]
                         ]
                     }
                 }
