@@ -810,7 +810,7 @@ class Client:
                     - rankingSystem (int | str): Required. The ranking system ID or name.
                     - asOfDt (str): Required. As of date (yyyy-mm-dd).
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to 'Complete'.
-                    - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
+                    - precision (int): Fixed precision digits (2 to 8). Defaults to 2.
                     - universe (str): Universe name (use 'ApiUniverse' for temporary ones).
                     - rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)). Defaults to 2.
                     - tickers (str): Comma-delimited list of tickers to include.
@@ -940,7 +940,7 @@ class Client:
                     - benchmark (str): Benchmark ticker. Defaults to 'SPY'.
                     - outputType (str): Output type ('ann' for annualized returns, 'perf' for performance). Defaults to 'ann'.
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Defaults to 'Complete'.
-                    - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
+                    - precision (int): Fixed precision digits (2 to 8). Defaults to 2.
                     - universe (str): Universe name.
                     - rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)).
 
@@ -2113,7 +2113,7 @@ class Client:
             params (dict[str, Any]): A dictionary of parameters for the prediction request.
                 Expected keys include::
 
-                    - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
+                    - precision (int): Fixed precision digits (2 to 6). Defaults to 2.
                     - universe (int | str): Universe name or ID.
                     - asOfDt (str): As of date (yyyy-mm-dd).
                     - includeNames (bool): Whether to include company names.
