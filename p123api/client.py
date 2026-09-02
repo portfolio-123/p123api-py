@@ -941,9 +941,234 @@ class Client:
 
     def strategy(self, strategy_id: int):
         """
-        Strategy details
-        :param strategy_id:
-        :return:
+        Retrieves details for a specific strategy or book.
+
+        Args:
+            strategy_id (int): The ID of the strategy or book.
+
+        Returns:
+            A dictionary containing the strategy's details, including summary information,
+            extensive performance and trading statistics, risk measurements, and daily
+            performance data.
+
+        >>> client.strategy(21293)
+        {
+            'summary': {
+                'generalInfo': {
+                    'name': 'Built for Stability',
+                    'mktVal': 141178.94,
+                    'cash': 4764.04,
+                    'noPos': 31,
+                    'lastTrades': 2,
+                    'lastTraded': '2026-04-27',
+                    'start': '2023-03-21',
+                    'end': '2026-08-26',
+                    'sizingMethod': 'Static Weight',
+                    'rebalPeriod': 'Every Week',
+                    'rebalMode': 'Automatic',
+                    'nextRebal': '2026-05-04',
+                    'rebalText': 'Past Due',
+                    'benchmarkId': 43688,
+                    'benchmark': 'S&P MidCap 400 Pure Growth ($MIDPG:USA)',
+                    'universe': 'Easy to Trade Europe',
+                    'rankingSystemId': 300819,
+                    'rankingSystem': 'Stability'
+                },
+                'quickStats': {
+                    'totalReturn': 41.18,
+                    'benchReturn': 73.18,
+                    'activeReturn': -32.0,
+                    'annualizedReturn': 10.56,
+                    'annualTurnover': 34.12,
+                    'maxDrawdown': -10.09,
+                    'benchMaxDrawdown': -26.65,
+                    'overallWinners': 40,
+                    'overallWinnersPct': 64.52,
+                    'sharpeRatio': 0.4,
+                    'benchCorrel': 0.42
+                }
+            },
+            'stats': {
+                'perf': {
+                    'returnPct': {
+                        'total': {'model': 41.18, 'bench': 73.18},
+                        'annualized': {'model': 10.56, 'bench': 17.33},
+                        'yearToDate': {'model': 8.24, 'bench': 17.81},
+                        'monthToDate': {'model': 3.22, 'bench': 3.68},
+                        'period4Week': {'model': 1.19, 'bench': 6.22},
+                        'period13Week': {'model': 7.56, 'bench': -1.67},
+                        'period1Year': {'model': 6.65, 'bench': 22.26},
+                        'period3Year': {'model': 36.34, 'bench': 55.22}
+                    },
+                    'monthly': {
+                        'period': ['2023-03-21', '2023-04-01', '2023-05-01', ...],
+                        'model': [2.6, 2.45, -4.34, ...],
+                        'bench': [2.43, -0.38, -2.5, ...]
+                    },
+                    'yearly': {
+                        'period': ['2023-03-21', '2024-01-01', '2025-01-01', ...],
+                        'model': [12.46, 11.23, 4.27, ...],
+                        'bench': [15.34, 17.42, 8.54, ...]
+                    },
+                    'weekly': {
+                        'period': ['2023-03-21', '2023-03-25', '2023-04-01', ...],
+                        'model': [0.45, 2.14, 0.97, ...],
+                        'bench': [-1.95, 4.46, -1.51, ...]
+                    }
+                },
+                'trading': {
+                    'parameters': {
+                        'startingCapital': 100000.0,
+                        'totalCashAdded': 0.0,
+                        'endingMarketValue': 141178.94,
+                        'startDate': '2023-03-21',
+                        'endDate': '2026-08-27',
+                        'daysSinceInception': 1254
+                    },
+                    'summary': {
+                        'totalBuyShortTrades': 62,
+                        'totalSellCoverTrades': 31,
+                        'averageAnnualTurnover': 34.12,
+                        'totalTradingCost': 1371.14,
+                        'realizedWinners': 70.97,
+                        'unrealizedWinners': 58.06,
+                        'overallWinners': 64.52
+                    },
+                    'realized': {
+                        'trades': {'all': 31, 'winners': 22, 'losers': 9},
+                        'avgReturn': {'all': 14.05, 'winners': 24.33, 'losers': -11.08},
+                        'avgDaysHeld': {'all': 332.58, 'winners': 334.41, 'losers': 328.11},
+                        'totalAmount': {'all': 19536.34, 'winners': 23108.34, 'losers': -3572.01},
+                        'biggestAmount': {'winners': 3744.6, 'losers': -840.28},
+                        'biggestPct': {'winners': 100.74, 'losers': -23.96}
+                    },
+                    'unrealized': {
+                        'trades': {'all': 31, 'winners': 18, 'losers': 13},
+                        'avgReturn': {'all': 11.44, 'winners': 28.35, 'losers': -11.98},
+                        'avgDaysHeld': {'all': 895.68, 'winners': 963.94, 'losers': 801.15},
+                        'totalAmount': {'all': 11034.44, 'winners': 16848.05, 'losers': -5813.61},
+                        'biggestAmount': {'winners': 3435.76, 'losers': -1181.39},
+                        'biggestPct': {'winners': 108.6, 'losers': -34.52}
+                    }
+                },
+                'riskMeasurements': {
+                    'daily': {
+                        'trailing3Year': {
+                            'totalReturn': {'model': 36.02, 'bench': 54.18},
+                            'annualizedReturn': {'model': 10.82, 'bench': 15.55},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 781.0, 'bench': 781.0},
+                            'standardDeviation': {'model': 10.93, 'bench': 20.28},
+                            'sharpeRatio': {'model': 0.68, 'bench': 0.63},
+                            'sortinoRatio': {'model': 0.94, 'bench': 0.9},
+                            'benchCorrel': {'model': 0.29},
+                            'rSquared': {'model': 0.08},
+                            'beta': {'model': 0.15},
+                            'alpha': {'model': 5.61}
+                        },
+                        'sinceInception': {
+                            'totalReturn': {'model': 41.18, 'bench': 73.18},
+                            'annualizedReturn': {'model': 10.57, 'bench': 17.35},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 895.0, 'bench': 895.0},
+                            'standardDeviation': {'model': 10.62, 'bench': 19.65},
+                            'sharpeRatio': {'model': 0.67, 'bench': 0.72},
+                            'sortinoRatio': {'model': 0.93, 'bench': 1.02},
+                            'benchCorrel': {'model': 0.31},
+                            'rSquared': {'model': 0.1},
+                            'beta': {'model': 0.17},
+                            'alpha': {'model': 4.86}
+                        }
+                    },
+                    'weekly': {
+                        'trailing3Year': {
+                            'totalReturn': {'model': 36.02, 'bench': 54.18},
+                            'annualizedReturn': {'model': 10.82, 'bench': 15.55},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 155.0, 'bench': 155.0},
+                            'standardDeviation': {'model': 10.25, 'bench': 19.05},
+                            'sharpeRatio': {'model': 0.62, 'bench': 0.58},
+                            'sortinoRatio': {'model': 0.85, 'bench': 0.82},
+                            'benchCorrel': {'model': 0.4},
+                            'rSquared': {'model': 0.16},
+                            'beta': {'model': 0.22},
+                            'alpha': {'model': 4.04}
+                        },
+                        'sinceInception': {
+                            'totalReturn': {'model': 41.18, 'bench': 73.18},
+                            'annualizedReturn': {'model': 10.57, 'bench': 17.35},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 178.0, 'bench': 178.0},
+                            'standardDeviation': {'model': 10.14, 'bench': 18.39},
+                            'sharpeRatio': {'model': 0.56, 'bench': 0.75},
+                            'sortinoRatio': {'model': 0.77, 'bench': 1.06},
+                            'benchCorrel': {'model': 0.42},
+                            'rSquared': {'model': 0.17},
+                            'beta': {'model': 0.23},
+                            'alpha': {'model': 2.53}
+                        }
+                    },
+                    'monthly': {
+                        'trailing3Year': {
+                            'totalReturn': {'model': 36.02, 'bench': 54.18},
+                            'annualizedReturn': {'model': 10.82, 'bench': 15.55},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 35.0, 'bench': 35.0},
+                            'standardDeviation': {'model': 11.96, 'bench': 18.81},
+                            'sharpeRatio': {'model': 0.47, 'bench': 0.55},
+                            'sortinoRatio': {'model': 0.64, 'bench': 0.77},
+                            'benchCorrel': {'model': 0.4},
+                            'rSquared': {'model': 0.16},
+                            'beta': {'model': 0.25},
+                            'alpha': {'model': 3.06}
+                        },
+                        'sinceInception': {
+                            'totalReturn': {'model': 41.18, 'bench': 73.18},
+                            'annualizedReturn': {'model': 10.57, 'bench': 17.35},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 40.0, 'bench': 40.0},
+                            'standardDeviation': {'model': 11.76, 'bench': 18.42},
+                            'sharpeRatio': {'model': 0.4, 'bench': 0.64},
+                            'sortinoRatio': {'model': 0.54, 'bench': 0.9},
+                            'benchCorrel': {'model': 0.42},
+                            'rSquared': {'model': 0.18},
+                            'beta': {'model': 0.27},
+                            'alpha': {'model': 1.51}
+                        }
+                    },
+                    'yearly': {
+                        'sinceInception': {
+                            'totalReturn': {'model': 41.18, 'bench': 73.18},
+                            'annualizedReturn': {'model': 10.57, 'bench': 17.35},
+                            'maxDrawdown': {'model': -10.09, 'bench': -26.65},
+                            'periodSamples': {'model': 2.0, 'bench': 2.0},
+                            'standardDeviation': {'model': 4.92, 'bench': 6.28},
+                            'sharpeRatio': {'model': 0.61, 'bench': 1.31},
+                            'sortinoRatio': {'model': 0.86, 'bench': 1.85},
+                            'benchCorrel': {'model': 1.0},
+                            'rSquared': {'model': 1.0},
+                            'beta': {'model': 0.76},
+                            'alpha': {'model': -3.23}
+                        }
+                    }
+                }
+            },
+            'dailyPerf': {
+                'date': ['2023-03-21', '2023-03-22', '2023-03-23', ...],
+                'cash': [100000.0, 41605.29, 41605.29, ...],
+                'mktValLong': [0.0, 58091.01, 57904.3, ...],
+                'mktValShort': [0.0, 0.0, 0.0, ...],
+                'mktValHedge': [0.0, 0.0, 0.0, ...],
+                'cashAdded': [100000.0, 0.0, 0.0, ...],
+                'totalEquity': [100000.0, 99696.3, 99509.59, ...],
+                'accruedDiv': [0.0, 0.0, 67.68, ...],
+                'leverageRatio': [0.0, 0.58, 0.58, ...],
+                'posCnt': [0, 18, 18, ...],
+                'bench': [18097.43, 17684.48, 17626.62, ...],
+                'ret': [100.0, 99.7, 99.58, ...],
+                'retBench': [100.0, 97.72, 97.4, ...]
+            }
+        }
         """
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_DETAILS_PATH.substitute(id=strategy_id))
@@ -955,15 +1180,15 @@ class Client:
         Copies a live or simulated strategy to a new live or simulated strategy. Copied live strategies are set to manual rebalance.
 
         Args:
-            id: Existing strategy ID.
-            name: Name for the new strategy.
-            type: Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy.
+            id (int): Existing strategy ID.
+            name (str): Name for the new strategy.
+            type (Literal["PTF", "SIM"] | None): Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy.
 
         Returns:
             An object containing the new strategy's id.
 
         Examples:
-            >>> client.strategy_copy(123, 'Sim copy', 'SIM')
+            >>> client.strategy_copy(12345, "Sim copy", "SIM")
             IdResult(id=12345)
         """
         return self._req_with_auth_fallback(
@@ -980,16 +1205,16 @@ class Client:
         Copies a live or simulated book to a new live or simulated book. Copied live books are set to manual rebalance.
 
         Args:
-            id: Existing book ID.
-            name: Name for the new book.
-            type: Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book.
+            id (int): Existing book ID.
+            name (str): Name for the new book.
+            type (Literal["BOOK", "BOOKSIM"] | None): Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book.
 
         Returns:
             An object containing the new book's id.
 
         Examples:
-            >>> client.book_copy(123, 'Sim book copy', 'BOOKSIM')
-            IdResult(id=12345)
+            >>> client.book_copy(12344, "Sim book copy", "BOOKSIM")
+            IdResult(id=12344)
         """
         return self._req_with_auth_fallback(
             method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}, result_type=IdResult
@@ -997,11 +1222,35 @@ class Client:
 
     def strategy_transactions(self, strategy_id: int, start: str, end: str, to_pandas=False):
         """
-        Strategy transactions
-        :param strategy_id:
-        :param start: start date in YYYY-MM-DD format
-        :param end: end date in YYYY-MM-DD format
-        :return:
+        Retrieves transactions for a specific strategy or book within a date range.
+
+        Args:
+            strategy_id (int): The ID of the strategy or book.
+            start (str): Start date (yyyy-mm-dd).
+            end (str): End date (yyyy-mm-dd).
+            to_pandas (bool): If True, converts the transaction results into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and a list of transaction details (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> client.strategy_transactions(22124, "2026-06-25", "2026-06-25", to_pandas=False)
+            {
+                'trans': [
+                    {
+                        'tranDt': '2026-06-15',
+                        'transId': 129,
+                        'notes': '0.01x3220 shs pay 06/30/26',
+                        'type': 'DIV',
+                        'shares': 0.0,
+                        'p123Uid': 54409,
+                        'ticker': 'SACH:USA',
+                        'amount': 32.2,
+                        'settleDt': '2026-06-30'
+                    },
+                    ...
+                ]
+            }
         """
 
         ret = self._req_with_auth_fallback(
@@ -1024,12 +1273,34 @@ class Client:
         make_rebal_dt_curr=False,
     ):
         """
-        Strategy transaction import
-        :param strategy_id:
-        :param file:
-        :param update_existing: update existing transactions
-        :param make_rebal_dt_curr: if True, the rebalancing date will be set to the current date
-        :return:
+        Imports transactions into a strategy.
+
+        Supported formats are CSV and TSV. Expected columns (in order) are: date, ticker, type,
+        shares, price, commission, and notes. Valid transaction types are BUY, SELL, COVER, SHORT,
+        DIV, SPLIT, and CASH. The Preferred Country setting will be used to resolve tickers that
+        do not have a country suffix. Dividends and splits are handled automatically unless
+        overridden. Prices and commissions are assumed to be in the strategy's currency.
+
+        Args:
+            strategy_id (int): The ID of the strategy or book.
+            data (str | IO[bytes]): The transaction data as a string or file-like object.
+            content_type (str): The format of the data ('text/csv' or 'text/tsv'). Defaults to 'text/csv'.
+            update_existing (bool): If True, updates existing transactions. Defaults to False.
+            make_rebal_dt_curr (bool): If True, sets the rebalancing date to the current date. Defaults to False.
+
+        Returns:
+            A dictionary containing the operation's cost, remaining quota, and the number of processed transactions.
+
+        Examples:
+            >>> csv_data = "04/28/2025,IBM,BUY,100,123.45,10.0\\n04/25/2025,,CASH,,,123.45"
+            >>> client.strategy_transaction_import(
+            ...     strategy_id=31824,
+            ...     data=csv_data,
+            ...     content_type="text/csv",
+            ...     update_existing=False,
+            ...     make_rebal_dt_curr=False
+            ... )
+            {'processedTransactions': 34}
         """
 
         get_params = []
@@ -1048,23 +1319,59 @@ class Client:
 
     def strategy_transaction_delete(self, strategy_id: int, params: list[int]):
         """
-        Strategy transaction delete
-        :param strategy_id:
-        :param trans_ids:
-        :return:
+        Deletes specific transactions from a strategy by their transaction IDs.
+
+        Args:
+            strategy_id (int): The ID of the strategy or book.
+            params (list[int]): A list of transaction IDs to delete.
+
+        Returns:
+            A dictionary containing the operation's cost and remaining quota.
+
+        Examples:
+            >>> client.strategy_transaction_delete(10737, [10737, 23412])
+            None
         """
+
         return self._req_with_auth_fallback(
             method="DELETE", url=self._endpoint + STRATEGY_TRANS_PATH.substitute(id=strategy_id), json=params
         )
 
     def strategy_holdings(self, strategy_id: int, date: str | None = None, to_pandas=False):
         """
-        Strategy holdings
-        :param strategy_id:
-        :param date: date in YYYY-MM-DD format, if None, current date is used
-        :return:
-        """
+        Retrieves the historical holdings for a specific strategy as of a given date.
 
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            date (str): The date to retrieve holdings for (yyyy-mm-dd). If None, defaults to the current date.
+            to_pandas (bool): If True, converts the holdings list into a pandas DataFrame. Defaults to False.
+
+        Returns:
+            A dictionary containing a list of holdings details (or a DataFrame if to_pandas is True).
+
+        Examples:
+            >>> client.strategy_holdings(1073741824, "2026-06-25", to_pandas=False)
+            {
+                'holdings': [
+                    {
+                        'ticker': 'ABT:USA',
+                        'name': 'Abbott Laboratories',
+                        'sector': 'Healthcare',
+                        'mktUid': 136,
+                        'retPct': -4.17,
+                        'shares': 42.0,
+                        'avgShareCost': 119.0595,
+                        'cost': 5000.5,
+                        'currPrice': 114.1,
+                        'value': 4792.2,
+                        'daysHeld': 912,
+                        'weight': 3.39,
+                        'rank': 90.13
+                    },
+                    ...
+                ]
+            }
+        """
         get_params = [("date", date)] if date is not None else []
 
         ret = self._req_with_auth_fallback(
@@ -1080,71 +1387,349 @@ class Client:
 
     def strategy_trading_system(self, strategy_id: int):
         """
-        Strategy trading system
-        :param strategy_id:
-        :return:
+        Retrieves the trading system configuration for a specific strategy or book.
+
+        Args:
+            strategy_id (int): The ID of the strategy or book.
+
+        Returns:
+            A dictionary containing the trading system configuration details (such as capital, universe, ranking,
+            rules, and rebalance settings).
+
+        Examples:
+            >>> client.strategy_trading_system(1414986)
+            {
+                'tradingSystem': {
+                    'startingCapital': 100000.0,
+                    'useMargin': False,
+                    'universeUid': 0,
+                    'universe': 'United States (Incl. Foreign Primary)',
+                    'rankingSystemUid': 72883,
+                    'rankingSystem': 'P123 Multi-market Rank',
+                    'rankingMethod': 0,
+                    'rebalance': {
+                        'sizingMethod': 'STATIC_OLD',
+                        'posWeight': 10.0,
+                        'rebalFreq': "Every Week"
+                    },
+                    'buyRules': [
+                        {
+                            'name': 'Defensive Buss.',
+                            'formula': 'Eval(sma(5,0,#SPEPSCY)>sma(21,0,#SPEPSCY) and close(0,#SPRP)>1, Price>=0, GICS(5510,3520,3510, 20201050))',
+                            'disabled': False
+                        },
+                        ...
+                    ],
+                    'sellRules': [
+                        {
+                            'name': 'Sell Rule',
+                            'formula': 'Eval((sma(5,0,#SPEPSCY)<sma(21,0,#SPEPSCY) or close(0,#SPRP)<1),Rank<=90 , Rank<=80)',
+                            'disabled': False
+                        },
+                        ...
+                    ]
+                }
+            }
         """
 
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id))
 
-    def strategy_trading_system_update(self, strategy_id: int, params: dict):
+    def strategy_trading_system_update(self, strategy_id: int, params: dict) -> None:
         """
-        Live strategy trading system update
-        :param strategy_id:
-        :param params:
-        :return:
+        Updates the trading system configuration for a live strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict[str, Any]): A dictionary of parameters for the trading system update.
+                Key arguments include::
+
+                    - useMargin (bool): Whether to use margin.
+                    - universe (int | str): Universe name or ID.
+                    - rankingSystem (int | str): Ranking system name or ID.
+                    - rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
+                    - buyRules (list[dict]): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                    - sellRules (list[dict]): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                    - rebalance (dict[str, Any]): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
+                        - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
+                        - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
+                        - Allowed values for 'rebalFreq' and 'reconFreq': 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                          'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
+
+        Examples:
+            >>> params = {
+            ...     "useMargin": True,
+            ...     "universe": "Prussell 2000",
+            ...     "rankingSystem": 23132,
+            ...     "rankingMethod": 2,
+            ...     "buyRules": [
+            ...         {
+            ...             "name": "Diverse",
+            ...             "formula": "SecWeight < 30",
+            ...             "disabled": True
+            ...         },
+            ...         ...
+            ...     ],
+            ...     "sellRules": [
+            ...         {
+            ...             "name": "main rank",
+            ...             "formula": "rank < 70 and NoBars > 60",
+            ...             "disabled": True
+            ...         },
+            ...         ...
+            ...     ],
+            ...     "rebalance": {
+            ...         "sizingMethod": "DYNAMIC",
+            ...         "numPos": 30,
+            ...         "rebalFreq": "Every Week",
+            ...         "reconFreq": "Every Week"
+            ...     }
+            ... }
+            >>> client.strategy_trading_system_update(42123, params)
+            None
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
 
     def book_trading_system_update(self, strategy_id: int, params: dict):
         """
-        Live book trading system update
-        :param strategy_id:
-        :param params:
-        :return:
+        Updates the trading system configuration for a live strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict[str, Any]): A dictionary of parameters for the trading system update.
+                Key arguments include::
+
+                    - useMargin (bool): Whether to use margin.
+                    - universe (int | str): Universe name or ID.
+                    - rankingSystem (int | str): Ranking system name or ID.
+                    - rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
+                    - buyRules (list[dict]): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                    - sellRules (list[dict]): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                    - rebalance (dict[str, Any]): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
+                        - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
+                        - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
+                        - Allowed values for 'rebalFreq' and 'reconFreq': 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                          'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
+
+        Examples:
+            >>> params = {
+            ...     "useMargin": True,
+            ...     "universe": "Prussell 2000",
+            ...     "rankingSystem": 2382,
+            ...     "rankingMethod": 2,
+            ...     "buyRules": [
+            ...         {
+            ...             "name": "Diverse",
+            ...             "formula": "SecWeight < 30",
+            ...             "disabled": True
+            ...         },
+            ...         ...
+            ...     ],
+            ...     "sellRules": [
+            ...         {
+            ...             "name": "main rank",
+            ...             "formula": "rank < 70 and NoBars > 60",
+            ...             "disabled": True
+            ...         },
+            ...         ...
+            ...     ],
+            ...     "rebalance": {
+            ...         "sizingMethod": "DYNAMIC",
+            ...         "numPos": 30,
+            ...         "rebalFreq": "Every Week",
+            ...         "reconFreq": "Every Week"
+            ...     }
+            ... }
+            >>> client.strategy_trading_system_update(2293, params)
+            None
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
 
-    def strategy_rerun(self, strategy_id: int, params: dict):
+    def strategy_rerun(self, strategy_id: int, params: dict) -> None:
         """
-        Simulated strategy rerun
-        :param strategy_id:
-        :param params:
-        :return:
+        Reruns a simulated strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict[str, Any]): A dictionary of parameters for the simulation rerun.
+                Key arguments include::
+
+                    - startDt (str): Required. Simulation start date (yyyy-mm-dd).
+                    - endDt (str): Required. Simulation end date (yyyy-mm-dd).
+                    - saveTrans (bool): Whether to save transactions.
+                    - useMargin (bool): Whether to use margin.
+                    - universe (int | str): Universe name or ID.
+                    - rankingSystem (int | str): Ranking system name or ID.
+                    - rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
+                    - buyRules (list[dict]): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                    - sellRules (list[dict]): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
+                    - rebalance (dict[str, Any]): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
+                        - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
+                        - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
+                        - Allowed values for 'rebalFreq' and 'reconFreq': 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
+                          'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
+
+        Examples:
+            >>> params = {
+            ...     "useMargin": True,
+            ...     "universe": "Prussell 2000",
+            ...     "rankingSystem": 3421,
+            ...     "rankingMethod": 2,
+            ...     "buyRules": [
+            ...         {
+            ...             "name": "Diverse",
+            ...             "formula": "SecWeight < 30",
+            ...             "disabled": True
+            ...         },
+            ...         ...
+            ...     ],
+            ...     "sellRules": [
+            ...         {
+            ...             "name": "main rank",
+            ...             "formula": "rank < 70 and NoBars > 60",
+            ...             "disabled": True
+            ...         },
+            ...         ...
+            ...     ],
+            ...     "rebalance": {
+            ...         "sizingMethod": "DYNAMIC",
+            ...         "numPos": 30,
+            ...         "rebalFreq": "Every Week",
+            ...         "reconFreq": "Every Week"
+            ...     },
+            ...     "startDt": "2020-01-01",
+            ...     "endDt": "2026-06-25",
+            ...     "saveTrans": True
+            ... }
+            >>> client.strategy_rerun(107374, params)
+            None
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + SIM_RERUN_PATH.substitute(id=strategy_id), json=params)
 
-    def book_rerun(self, strategy_id: int, params: dict):
+    def book_rerun(self, strategy_id: int, params: dict) -> None:
         """
-        Simulated book rerun
-        :param strategy_id:
-        :param params:
-        :return:
+        Reruns a simulated book.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict[str, Any]): A dictionary of parameters for the book simulation rerun.
+                Key arguments include::
+
+                    - startDt (str): Required. Simulation start date (yyyy-mm-dd).
+                    - endDt (str): Required. Simulation end date (yyyy-mm-dd).
+                    - assets (list[dict]): A list of assets included in the book. Each asset requires::
+                        - itemUid (int): The unique identifier for the item.
+                        - type (str): The asset type ('PTF' for live strategy, 'DM' for designer model,
+                          'PRC' for stock or ETF, 'SIM' for simulated strategy).
+                        - relativeWeight (float): The relative weight of the asset in the book.
+
+        Examples:
+            >>> params = {
+            ...     "assets": [
+            ...         {
+            ...             "itemUid": 3221,
+            ...             "type": "PTF",
+            ...             "relativeWeight": 0.4
+            ...         },
+            ...         ...
+            ...     ],
+            ...     "startDt": "2020-01-01",
+            ...     "endDt": "2026-06-25"
+            ... }
+            >>> client.book_rerun(32212, params)
+            None
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + BOOK_SIM_RERUN_PATH.substitute(id=strategy_id), json=params)
 
     def strategy_rebalance(self, strategy_id: int, params: dict):
         """
-        Strategy rebalance
-        :param strategy_id:
-        :param params:
-        :return:
-        """
+        Retrieves rebalance recommendations for a strategy.
 
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict[str, Any]): A dictionary of parameters for the rebalance request.
+                Key arguments include::
+
+                    - pitMethod (str): Point-in-Time method override ('Prelim' or 'Complete').
+                    - op (str): Rebalance operation for Dynamic Weight Live Strategies ('Rebal', 'Recon', or 'ReconRebal'). Assigned automatically by default based on the strategy's nextRebal and nextRecon dates.
+                    - reject (list[int]): A list of P123 UIDs for which to suppress rebalance recommendations.
+                    - figi (str): FIGI mapping ('Share Class' or 'Country Composite').
+                    - minRebalTran (float): Override for the Minimum Rebalance Transaction (applicable for Live Book rebalances only).
+
+        Returns:
+            A dictionary containing the specific operation executed, asset ranks, and a list of rebalance recommendations
+            detailing actions, shares, prices, and related metrics.
+
+        Examples:
+            >>> params = {
+            ...     "pitMethod": "Prelim",
+            ...     "op": "Rebal",
+            ...     "reject": [231212],
+            ...     "figi": "Share Class",
+            ...     "minRebalTran": 0.1
+            ... }
+            >>> client.strategy_rebalance(1073741824, params)
+            {
+                'ranks': [
+                    [1893, 74.16950988769531],
+                    ...
+                ],
+                'recs': [
+                    {
+                        'ticker': 'MTVW:GBR',
+                        'p123Uid': 87770,
+                        'action': 'BUY',
+                        'price': 116.9082,
+                        'shares': 38.0,
+                        'comm': 0.0,
+                        'slip': 222.51
+                    }
+                ]
+            }
+        """
         ret = self._req_with_auth_fallback(url=self._endpoint + STRATEGY_REBALANCE_PATH.substitute(id=strategy_id), json=params)
 
         return ret
 
-    def strategy_rebalance_commit(self, strategy_id: int, params: dict):
+    def strategy_rebalance_commit(self, strategy_id: int, params: dict) -> None:
         """
-        Strategy rebalance commit
-        :param strategy_id:
-        :param params:
-        :return:
+        Commits rebalance transactions for a strategy.
+
+        Args:
+            strategy_id (int): Required. The ID of the strategy or book.
+            params (dict[str, Any]): A dictionary of parameters for the rebalance commit.
+                Key arguments include::
+
+                    - trans (list[dict]): Required. A list of rebalance transactions to commit. Each
+                      transaction dictionary must contain 'p123Uid' (int), 'action' ('BUY', 'COVER', 'SELL', or 'SHORT'),
+                      'price' (float), and 'shares' (float). Optional keys include 'comm' (float), 'slip' (float), and 'note' (str).
+                    - op (str): Rebalance operation for Dynamic Weight Live Strategies ('Rebal', 'Recon', or 'ReconRebal').
+                    - ranks (list[list]): Ranks included with the rebalance recommendations request (e.g., [[4737, 99.5], [774, 99.3]]).
+                      Required for Live Strategy rebalances.
+
+        Examples:
+            >>> params = {
+            ...     "op": "Rebal",
+            ...     "ranks": [
+            ...         [4737, 99.5],
+            ...         [774, 99.3]
+            ...     ],
+            ...     "trans": [
+            ...         {
+            ...             "p123Uid": 31231,
+            ...             "action": "BUY",
+            ...             "price": 331,
+            ...             "shares": 3,
+            ...             "comm": 0.1,
+            ...             "slip": 0.1,
+            ...         }
+            ...     ]
+            ... }
+            >>> client.strategy_rebalance_commit(12312, params)
+            None
         """
 
         ret = self._req_with_auth_fallback(url=self._endpoint + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id), json=params)
@@ -1622,7 +2207,7 @@ class Client:
         Retrieve basic strategy info by ID.
 
         Args:
-            id: Strategy ID.
+            id (int): Strategy ID.
 
         Returns:
             An object containing the basic strategy info.
@@ -1639,13 +2224,13 @@ class Client:
         Retrieve basic strategy info by name.
 
         Args:
-            name: Strategy name.
+            name (str): Strategy name.
 
         Returns:
             An object containing the basic strategy info.
 
         Examples:
-            >>> client.strategy_info(name='Strategy name')
+            >>> client.strategy_info(name="Strategy name")
             StrategyInfoResult(strategyId=123, name='Strategy name')
         """
         ...
