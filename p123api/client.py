@@ -1121,7 +1121,7 @@ class Client:
 
         Args:
             series_id (int): Unique identifier of the data series.
-            data (str | IO[str]): Delimited content string or file-like containing delimited content. Must not exceed 100 MB.
+            data (str | IO[bytes]): Delimited content string or file-like containing delimited content. Must not exceed 100 MB.
             existing_data (Literal["overwrite", "skip", "delete"]): Policy for dealing with collisions against stored dates. Defaults to ``overwrite``.
                 Allowed values include 'overwrite' (overwrite stored values), 'skip' (retain stored values), or 'delete' (clear before storing uploaded data).
             date_format (str): Date format. Defaults to ``yyyy-mm-dd``.
