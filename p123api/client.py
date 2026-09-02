@@ -232,6 +232,7 @@ class Client:
                 Key arguments include::
 
                     - screen (int | dict): Required. The screen ID or screen definition parameters.
+                      For more information about and examples of using a dict, see the article "API functions: Screen" in the Knowledge Base.
                     - startDt (str): Required. Backtest start date (yyyy-mm-dd).
                     - endDt (str): Backtest end date (yyyy-mm-dd).
                     - frequency (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
@@ -303,6 +304,7 @@ class Client:
                 Key arguments include::
 
                     - screen (int | dict): Required. The screen ID or screen definition parameters.
+                      For more information about and examples of using a dict, see the article "API functions: Screen" in the Knowledge Base.
                     - startDt (str): Required. Backtest start date (yyyy-mm-dd).
                     - endDt (str): Backtest end date (yyyy-mm-dd).
                     - rebalFreq (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
@@ -467,6 +469,7 @@ class Client:
                 Key arguments include::
 
                     - screen (int | dict): Required. The screen ID or screen definition parameters.
+                      For more information about and examples of using a dict, see the article "API functions: Screen" in the Knowledge Base.
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete'). Overrides for existing screens or sets for new screens (defaults to 'Complete').
                     - precision (int): Fixed precision digits (2 to 8). Defaults to 2.
                     - asOfDt (str): As of date (yyyy-mm-dd). Defaults to today.
