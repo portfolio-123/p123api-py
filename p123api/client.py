@@ -663,7 +663,7 @@ class Client:
                     - precision (int): Fixed precision digits (2 to 8). Pass None for no additional rounding. Defaults to 2.
                     - universe (str): Universe name (use 'ApiUniverse' for temporary ones).
                     - rankingMethod (int): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)). Defaults to 2.
-                    - tickers (str): Tickers to include. Delimited by ','
+                    - tickers (str): Comma-delimited list of tickers to include.
                     - includeNames (bool): Include company names in the output. Defaults to False.
                     - includeNaCnt (bool): Include NA count. Defaults to False.
                     - includeFinalStmt (bool): Include final statement flag. Defaults to False.
