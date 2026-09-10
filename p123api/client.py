@@ -716,7 +716,7 @@ class Client:
             ... }
             >>> client.data_universe(params, to_pandas=False)
             {
-                'dt': '024-07-01',
+                'dt': '2024-07-01',
                 'p123Uids': [159, 115627, 26968, ...],
                 'tickers': ['RAMP', 'BHVN', 'AROC', ...],
                 'data': [
@@ -828,11 +828,11 @@ class Client:
             {
                 'dt': '2020-04-18',
                 'p123Uids': [774],
-                'tickers': ['AAPL' ],
-                'names': ['Apple, Inc.' ],
+                'tickers': ['AAPL'],
+                'names': ['Apple, Inc.'],
                 'naCnt': [16 ],
-                'finalStmt': [true ],
-                'ranks': [97.872 ],
+                'finalStmt': [True],
+                'ranks': [97.872],
                 'nodes': {
                     'ids': [0, 1, 6, ...],
                     'names': [
@@ -1343,7 +1343,7 @@ class Client:
 
         Examples:
             >>> client.book_copy(12344, "Sim book copy", "BOOKSIM")
-            IdResult(id=12344)
+            IdResult(id=29382)
         """
         return self._req_with_auth_fallback(
             method="POST", url=self._endpoint + BOOK_COPY_PATH.substitute(id=id), json={"name": name, "type": type}, result_type=IdResult
@@ -1413,7 +1413,7 @@ class Client:
         Args:
             strategy_id (int): The ID of the strategy or book.
             data (str | IO[bytes]): The transaction data as a string or file-like object.
-            content_type (str): The format of the data ('text/csv' or 'text/tsv'). Defaults to 'text/csv'.
+            content_type (Literal["text/csv", "text/tsv"]): The format of the data. Defaults to 'text/csv'.
             update_existing (bool): If True, updates existing transactions. Defaults to False.
             make_rebal_dt_curr (bool): If True, sets the rebalancing date to the current date. Defaults to False.
 
@@ -1453,9 +1453,6 @@ class Client:
         Args:
             strategy_id (int): The ID of the strategy or book.
             params (list[int]): A list of transaction IDs to delete.
-
-        Returns:
-            A dictionary containing the operation's cost and remaining quota.
 
         Examples:
             >>> client.strategy_transaction_delete(10737, [10737, 23412])
@@ -1621,7 +1618,7 @@ class Client:
 
     def book_trading_system_update(self, strategy_id: int, params: dict):
         """
-        Updates the trading system configuration for a live strategy.
+        Updates the trading system configuration for a live book.
 
         Args:
             strategy_id (int): Required. The ID of the strategy or book.
@@ -1912,16 +1909,16 @@ class Client:
             ignore_errors (bool): If ``True``, lines in the data with errors will be silently discarded.
             ignore_duplicates (bool): If ``True``, additional occurrences of a (date, identifier) pair in the data are skipped.
 
-        Example:
-        >>> client.stock_factor_upload(
-        ...     data=csv_data,
-        ...     factor_id=4412,
-        ...     column_separator=",",
-        ...     existing_data="overwrite",
-        ...     ignore_errors=True,
-        ...     ignore_duplicates=True
-        ... )
-        None
+        Examples:
+            >>> client.stock_factor_upload(
+            ...     data=csv_data,
+            ...     factor_id=4412,
+            ...     column_separator=",",
+            ...     existing_data="overwrite",
+            ...     ignore_errors=True,
+            ...     ignore_duplicates=True
+            ... )
+            None
         """
 
         # COMPAT: column_separator originally accepted 'comma', 'semicolon', 'tab' which matches the API.
@@ -2165,7 +2162,7 @@ class Client:
         """
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
-    def data_prices(self, identifier: int | str, start: str, end: str | None, to_pandas=False):
+    def data_prices(self, identifier: int | str, start: str, end=None, to_pandas=False):
         """
         Retrieves historical price data for a specific security by UID or ticker.
 
