@@ -705,10 +705,7 @@ class Client:
             ...     "benchmark": "SPY",
             ...     "type": "ETF",
             ...     "universe": "Prussell 2000",
-            ...     "asOfDt": "2026-06-24",
-            ...     "asOfDts": [
-            ...         "2026-06-24"
-            ...     ],
+            ...     "asOfDt": "2024-07-01",
             ...     "figi": "Share Class",
             ...     "preproc": {
             ...         "scaling": "normal"
@@ -830,7 +827,7 @@ class Client:
                 'p123Uids': [774],
                 'tickers': ['AAPL'],
                 'names': ['Apple, Inc.'],
-                'naCnt': [16 ],
+                'naCnt': [16],
                 'finalStmt': [True],
                 'ranks': [97.872],
                 'nodes': {
@@ -1311,14 +1308,14 @@ class Client:
         Args:
             id (int): Existing strategy ID.
             name (str): Name for the new strategy.
-            type (Literal["PTF", "SIM"] | None): Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy.
+            type (Literal["PTF", "SIM"] | None): Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy. If None a strategy of the same type as the original will be created.
 
         Returns:
             An object containing the new strategy's id.
 
         Examples:
             >>> client.strategy_copy(12345, "Sim copy", "SIM")
-            IdResult(id=12345)
+            IdResult(id=45833)
         """
         return self._req_with_auth_fallback(
             method="POST",
@@ -1336,7 +1333,7 @@ class Client:
         Args:
             id (int): Existing book ID.
             name (str): Name for the new book.
-            type (Literal["BOOK", "BOOKSIM"] | None): Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book.
+            type (Literal["BOOK", "BOOKSIM"] | None): Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book. If None a book of the same type as the original will be created.
 
         Returns:
             An object containing the new book's id.
@@ -2162,7 +2159,7 @@ class Client:
         """
         return self._req_with_auth_fallback(method="GET", url=self._endpoint + STOCK_FACTOR_DOWNLOAD_PATH.substitute(id=factor_id))
 
-    def data_prices(self, identifier: int | str, start: str, end=None, to_pandas=False):
+    def data_prices(self, identifier: int | str, start: str, end: str | None = None, to_pandas=False):
         """
         Retrieves historical price data for a specific security by UID or ticker.
 
