@@ -1308,7 +1308,7 @@ class Client:
         Args:
             id (int): Existing strategy ID.
             name (str): Name for the new strategy.
-            type (Literal["PTF", "SIM"] | None): Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy. If None a strategy of the same type as the original will be created.
+            type (Literal["PTF", "SIM"] | None): Type of strategy to create. Use "PTF" for a live strategy or "SIM" for simulated strategy. If omitted or None, a strategy of the same type as the original will be created.
 
         Returns:
             An object containing the new strategy's id.
@@ -1333,7 +1333,7 @@ class Client:
         Args:
             id (int): Existing book ID.
             name (str): Name for the new book.
-            type (Literal["BOOK", "BOOKSIM"] | None): Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book. If None a book of the same type as the original will be created.
+            type (Literal["BOOK", "BOOKSIM"] | None): Type of book to create. Use "BOOK" for a live book or "BOOKSIM" for simulated book. If omitted or None, a book of the same type as the original will be created.
 
         Returns:
             An object containing the new book's id.
