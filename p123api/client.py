@@ -533,7 +533,6 @@ class Client:
             ...     "startingUniverse": "ALLFUND"
             ... }
             >>> client.universe_update(params)
-            None
         """
         return self._req_with_auth_fallback(url=self._endpoint + UNIVERSE_PATH, json=params)
 
@@ -560,7 +559,6 @@ class Client:
             ...     "currency": "USD"
             ... }
             >>> client.rank_update(params)
-            None
         """
         return self._req_with_auth_fallback(url=self._endpoint + RANK_PATH, json=params)
 
@@ -958,7 +956,6 @@ class Client:
 
         Examples:
             >>> client.rank_touch(107374)
-            None
         """
         self._req_with_auth_fallback(method="POST", url=self._endpoint + RANK_TOUCH_PATH.substitute(id=rank_id))
 
@@ -1453,7 +1450,6 @@ class Client:
 
         Examples:
             >>> client.strategy_transaction_delete(10737, [10737, 23412])
-            None
         """
 
         return self._req_with_auth_fallback(
@@ -1608,7 +1604,6 @@ class Client:
             ...     }
             ... }
             >>> client.strategy_trading_system_update(42123, params)
-            None
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
@@ -1637,7 +1632,6 @@ class Client:
             ...     ]
             ... }
             >>> client.book_trading_system_update(2293, params)
-            None
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=book_id), json=params)
@@ -1699,7 +1693,6 @@ class Client:
             ...     "saveTrans": True
             ... }
             >>> client.strategy_rerun(107374, params)
-            None
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + SIM_RERUN_PATH.substitute(id=strategy_id), json=params)
@@ -1735,7 +1728,6 @@ class Client:
             ...     "endDt": "2026-06-25"
             ... }
             >>> client.book_rerun(32212, params)
-            None
         """
 
         return self._req_with_auth_fallback(url=self._endpoint + BOOK_SIM_RERUN_PATH.substitute(id=strategy_id), json=params)
@@ -1825,7 +1817,6 @@ class Client:
             ...     ]
             ... }
             >>> client.strategy_rebalance_commit(12312, params)
-            None
         """
 
         ret = self._req_with_auth_fallback(url=self._endpoint + STRATEGY_REBALANCE_COMMIT_PATH.substitute(id=strategy_id), json=params)
@@ -1888,7 +1879,6 @@ class Client:
             ...     ignore_errors=True,
             ...     ignore_duplicates=True
             ... )
-            None
         """
 
         # COMPAT: column_separator originally accepted 'comma', 'semicolon', 'tab' which matches the API.
@@ -1946,7 +1936,6 @@ class Client:
 
         Examples:
             >>> client.stock_factor_delete(10737)
-            None
         """
         return self._req_with_auth_fallback(url=self._endpoint + STOCK_FACTOR_DELETE_PATH.substitute(id=factor_id), method="DELETE")
 
@@ -1995,7 +1984,6 @@ class Client:
             ...     existing_data="overwrite",
             ...     contains_header_row=True
             ... )
-            None
         """
         get_params = [
             ("existingData", existing_data),
@@ -2040,7 +2028,6 @@ class Client:
 
         Examples:
             >>> client.data_series_delete(10734)
-            None
         """
         return self._req_with_auth_fallback(method="DELETE", url=self._endpoint + DATA_SERIES_DELETE_PATH.substitute(id=series_id))
 
