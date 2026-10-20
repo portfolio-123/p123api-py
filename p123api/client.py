@@ -237,12 +237,11 @@ class Client:
                       For more information about and examples of using a dict, see the article "API functions: Screen" in the Knowledge Base.
                     - startDt (str): Required. Backtest start date (yyyy-mm-dd).
                     - endDt (str): Backtest end date (yyyy-mm-dd).
-                    - frequency (str): Rebalance frequency. Allowed values are 'Every Week', 'Every 2 Weeks',
-                      'Every 3 Weeks', 'Every 4 Weeks', 'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks',
-                      'Every 26 Weeks', or 'Every 52 Weeks'. Defaults to 'Every 4 Weeks'.
+                    - frequency (str): Frequency ('Every Week' or 'Every 4 Weeks'). Defaults to 'Every Week'.
                     - holdingPeriod (int): Holding period in days (1 to 730). Defaults to 182.
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
-                    - transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average). Defaults to 1.
+                    - precision (int): Fixed precision digits (2 to 8). Defaults to 2.
+                    - transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average of Hi and Low). Defaults to 1.
                     - slippage (float): Slippage percentage. Defaults to 0.25.
                     - longWeight (float): Long weight percentage. Defaults to 100.
                     - shortWeight (float): Short weight percentage. Defaults to 100.
@@ -316,7 +315,8 @@ class Client:
                     - rankTolerance (float): Rank tolerance. Defaults to 0.
                     - carryCost (float): Carry cost percentage. Defaults to 1.5.
                     - pitMethod (str): Point-in-Time method ('Prelim' or 'Complete').
-                    - transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average). Defaults to 1.
+                    - precision (int): Fixed precision digits (2 to 8). Defaults to 2.
+                    - transPrice (int): Transaction price type (1=Next Open, 4=Next Close, 3=Next Average of Hi and Low). Defaults to 1.
                     - slippage (float): Slippage percentage. Defaults to 0.25.
                     - longWeight (float): Long weight percentage. Defaults to 100.
                     - shortWeight (float): Short weight percentage. Defaults to 100.
@@ -680,7 +680,7 @@ class Client:
                     - preproc (dict[str, Any]): Preprocessor configuration dictionary, containing::
                         - scaling (str): Required. Scaling method ('normal', 'rank', 'minmax').
                         - naFill (bool): Set NAs to the middle values. Defaults to False.
-                        - scope (str): Preprocessor scope ('dataset', 'training', 'date'). Defaults to 'date'.
+                        - scope (str): Preprocessor scope ('dataset', 'date'). Defaults to 'date'.
                         - trimPct (float): Trim percentage. Defaults to 0.
                         - outliers (bool): Clip outliers. Defaults to False.
                         - outlierLimit (float): Used for normal scaling. Defaults to 0.
@@ -703,7 +703,7 @@ class Client:
             ...     "precision": 2,
             ...     "currency": "USD",
             ...     "benchmark": "SPY",
-            ...     "type": "ETF",
+            ...     "type": "Stock",
             ...     "universe": "Prussell 2000",
             ...     "asOfDt": "2024-07-01",
             ...     "figi": "Share Class",
@@ -977,11 +977,11 @@ class Client:
         Creates a ranking system based on the provided nodes and configuration parameters.
 
         Args:
-            name: Ranking system name.
-            nodes: Ranking system nodes XML.
-            rankingMethod: Ranking method to be used.
-            type: Ranking method type. Use "Stock" or "ETF".
-            currency: Ranking method currency.
+            name (str): Ranking system name.
+            nodes (str): Ranking system nodes XML.
+            rankingMethod (RankingMethod): Ranking method (2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution (Experimental)). Defaults to 2.
+            type (Literal["Stock", "ETF"]): Ranking method type. Use "Stock" or "ETF".
+            currency (str): Currency (e.g., 'USD', 'CAD', 'EUR', 'GBP', 'CHF', 'NOK', 'PLN', 'SEK', 'TRY'). Defaults to 'USD'.
 
         Returns:
             An object containing the new ranking system's id.
@@ -1012,7 +1012,7 @@ class Client:
         Retrieves the full configuration details for a given ranking system by its ID.
 
         Args:
-            id: The unique identifier of the ranking system.
+            id (int): The unique identifier of the ranking system.
 
         Returns:
             An object containing the ranking system's details.
@@ -1040,7 +1040,7 @@ class Client:
         Retrieves the details for a given ranking system by name.
 
         Args:
-            name: The name of the ranking system.
+            name (str): The name of the ranking system.
 
         Returns:
             An object containing the ranking system's details.
@@ -1562,7 +1562,7 @@ class Client:
         Updates the trading system configuration for a live strategy.
 
         Args:
-            strategy_id (int): Required. The ID of the strategy or book.
+            strategy_id (int): Required. The ID of the strategy.
             params (dict[str, Any]): A dictionary of parameters for the trading system update.
                 Key arguments include::
 
@@ -1613,61 +1613,34 @@ class Client:
 
         return self._req_with_auth_fallback(url=self._endpoint + STRATEGY_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
 
-    def book_trading_system_update(self, strategy_id: int, params: dict):
+    def book_trading_system_update(self, book_id: int, params: dict):
         """
         Updates the trading system configuration for a live book.
 
         Args:
-            strategy_id (int): Required. The ID of the strategy or book.
-            params (dict[str, Any]): A dictionary of parameters for the trading system update.
+            book_id (int): Required. The ID of the book.
+            params (dict[str, Any]): A dictionary of parameters for the book trading system update.
                 Key arguments include::
 
-                    - useMargin (bool): Whether to use margin.
-                    - universe (int | str): Universe name or ID.
-                    - rankingSystem (int | str): Ranking system name or ID.
-                    - rankingMethod (int): Ranking method (0=Default, 2=Percentile NAs Negative, 4=Percentile NAs Neutral, 1=Normal Distribution).
-                    - buyRules (list[dict]): List of buy rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
-                    - sellRules (list[dict]): List of sell rules, where each rule contains 'formula' (str, required), 'name' (str), and 'disabled' (bool).
-                    - rebalance (dict[str, Any]): Rebalance configuration. Must include 'sizingMethod' ('DYNAMIC', 'STATIC', or 'STATIC_OLD').
-                        - For 'DYNAMIC': Includes 'numPos' (int), 'rebalFreq' (str), and 'reconFreq' (str).
-                        - For 'STATIC' / 'STATIC_OLD': Includes 'posWeight' (float) and 'rebalFreq' (str).
-                        - Allowed values for 'rebalFreq' and 'reconFreq': 'Every Week', 'Every 2 Weeks', 'Every 3 Weeks', 'Every 4 Weeks',
-                          'Every 6 Weeks', 'Every 8 Weeks', 'Every 13 Weeks', 'Every 26 Weeks', 'Every 52 Weeks'.
+                    - assets (list[dict]): Required. List of book assets, where each asset contains:
+                        - itemUid (int): Required. ID of the asset.
+                        - type (str): Required. 'PTF' (live strategy), 'DM' (designer model), or 'PRC' (stock or ETF).
+                        - relativeWeight (float): Required. Relative weight of the asset.
+                    - grossExposure (float): Gross exposure for the book (0.1 to 3).
 
         Examples:
             >>> params = {
-            ...     "useMargin": True,
-            ...     "universe": "Prussell 2000",
-            ...     "rankingSystem": 2382,
-            ...     "rankingMethod": 2,
-            ...     "buyRules": [
-            ...         {
-            ...             "name": "Diverse",
-            ...             "formula": "SecWeight < 30",
-            ...             "disabled": True
-            ...         },
-            ...         ...
-            ...     ],
-            ...     "sellRules": [
-            ...         {
-            ...             "name": "main rank",
-            ...             "formula": "rank < 70 and NoBars > 60",
-            ...             "disabled": True
-            ...         },
-            ...         ...
-            ...     ],
-            ...     "rebalance": {
-            ...         "sizingMethod": "DYNAMIC",
-            ...         "numPos": 30,
-            ...         "rebalFreq": "Every Week",
-            ...         "reconFreq": "Every Week"
-            ...     }
+            ...     "grossExposure": 1.0,
+            ...     "assets": [
+            ...         {"itemUid": 1234, "type": "PTF", "relativeWeight": 60},
+            ...         {"itemUid": 5678, "type": "DM", "relativeWeight": 40}
+            ...     ]
             ... }
-            >>> client.strategy_trading_system_update(2293, params)
+            >>> client.book_trading_system_update(2293, params)
             None
         """
 
-        return self._req_with_auth_fallback(url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=strategy_id), json=params)
+        return self._req_with_auth_fallback(url=self._endpoint + BOOK_TRADING_SYSTEM_PATH.substitute(id=book_id), json=params)
 
     def strategy_rerun(self, strategy_id: int, params: dict) -> None:
         """
@@ -2099,7 +2072,7 @@ class Client:
             >>> params = {
             ...     "precision": 2,
             ...     "universe": "Prussell 2000",
-            ...     "asOfDt": "2026-06-25",
+            ...     "asOfDt": "2026-10-10",
             ...     "includeNames": True,
             ...     "includeFeatures": True,
             ...     "figi": "Share Class"
@@ -2222,7 +2195,7 @@ class Client:
         Retrieve basic stock factor info by ID.
 
         Args:
-            id: Stock factor ID.
+            id (int): Stock factor ID.
 
         Returns:
             An object containing the basic stock factor info.
@@ -2239,7 +2212,7 @@ class Client:
         Retrieve basic stock factor info by name.
 
         Args:
-            name: Stock factor name.
+            name (str): Stock factor name.
 
         Returns:
             An object containing the basic stock factor info.
@@ -2260,7 +2233,7 @@ class Client:
             Use overload accepting `id` parameter instead.
 
         Args:
-            factor_id: Stock factor ID.
+            factor_id (int): Stock factor ID.
 
         Returns:
             An object containing the basic stock factor info.
@@ -2272,6 +2245,25 @@ class Client:
         ...
 
     def stock_factor_info(self, *, id: int | None = None, factor_id: int | None = None, name: str | None = None) -> StockFactorInfoResult:
+        """
+        Retrieve basic stock factor info by ID or name.
+
+        Exactly one of `id` or `name` must be provided.
+
+        Args:
+            id (int): Stock factor ID.
+            name (str): Stock factor name.
+            factor_id (int): Deprecated, use `id` instead. Stock factor ID.
+
+        Returns:
+            An object containing the basic stock factor info.
+
+        Examples:
+            >>> client.stock_factor_info(id=123)
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
+            >>> client.stock_factor_info(name="Stock factor name")
+            StockFactorInfoResult(factorId=123, name='Stock factor name')
+        """
         if id is not None:
             params = [("id", id)]
         elif factor_id is not None:
@@ -2288,7 +2280,7 @@ class Client:
         Retrieve basic data series info by ID.
 
         Args:
-            id: Data series ID.
+            id (int): Data series ID.
 
         Returns:
             An object containing the basic data series info.
@@ -2305,7 +2297,7 @@ class Client:
         Retrieve basic data series info by name.
 
         Args:
-            name: Data series name.
+            name (str): Data series name.
 
         Returns:
             An object containing the basic data series info.
@@ -2359,6 +2351,24 @@ class Client:
         ...
 
     def strategy_info(self, *, id: int | None = None, name: str | None = None) -> StrategyInfoResult:
+        """
+        Retrieve basic strategy info by ID or name.
+
+        Exactly one of `id` or `name` must be provided.
+
+        Args:
+            id (int): Strategy ID.
+            name (str): Strategy name.
+
+        Returns:
+            An object containing the basic strategy info.
+
+        Examples:
+            >>> client.strategy_info(id=123)
+            StrategyInfoResult(strategyId=123, name='Strategy name')
+            >>> client.strategy_info(name="Strategy name")
+            StrategyInfoResult(strategyId=123, name='Strategy name')
+        """
         return self._req_with_auth_fallback(
             method="GET",
             url=self._endpoint + STRATEGY_INFO_PATH,
